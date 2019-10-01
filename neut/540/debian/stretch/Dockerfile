@@ -1,10 +1,10 @@
 FROM picker24/cernlib2005:debian_stretch AS CERNLIB
 
 #NEUT image generally based on the ROOT image
-FROM picker24/root_6:debian_stretch
+FROM picker24/root_6_12_6:debian_stretch
 
 # Pull in CERNLIB
-COPY --from=CERNLIB /opt/cernlib /opt/
+COPY --from=CERNLIB /opt/cernlib /opt/cernlib
 
 ENV CERN /opt/cernlib
 ENV CERN_LEVEL 2005
@@ -23,13 +23,12 @@ ARG N_CORE=8
 ## NEUT src is not freely available, must take a copy of a local repository
 ADD neut /opt/neut-src
 WORKDIR /opt/neut-src
-RUN git checkout feature/autotools_build
 WORKDIR /opt/neut-src/src
 RUN autoreconf -i --force
 RUN mkdir -p /opt/neut-build /opt/neut
 WORKDIR /opt/neut-build
 RUN /opt/neut-src/src/configure --prefix=/opt/neut/5.4.0
-RUN make
+RUN make -j ${N_CORE}
 RUN make install
 RUN mkdir -p /opt/neut/share/
 RUN cp -r /opt/neut-src/src/crsdat /opt/neut/share/

@@ -1,6 +1,6 @@
 FROM picker24/neut533:debian_stretch
 
-ARG TRANSIENT_SW="build-essential"
+ARG TRANSIENT_SW="build-essential libgfortran-6-dev"
 
 RUN apt update && apt install --no-install-recommends -y ${TRANSIENT_SW}
 
@@ -70,7 +70,7 @@ ENV T2KREWEIGHT "/opt/T2KReWeight/v1r27p3"
 
 #Get rid of everything we don't need
 RUN apt remove -y ${TRANSIENT_SW}
-RUN apt install --no-install-recommends -y libstdc++6
+RUN apt install --no-install-recommends -y libstdc++6 libgfortran3
 RUN apt autoremove -y --purge && apt clean
 
 WORKDIR /

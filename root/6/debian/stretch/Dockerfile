@@ -2,7 +2,7 @@ FROM debian:stretch-slim
 
 ARG N_CORE=8
 
-ARG TRANSIENT_SW="build-essential gfortran cmake git python-dev wget libpcre3-dev liblz4-dev liblzma-dev zlib1g-dev libgsl-dev libfreetype6-dev libx11-dev libxpm-dev libxft-dev libxext-dev libpng16-16 libjpeg62-turbo"
+ARG TRANSIENT_SW="build-essential gfortran cmake git python-dev wget libpcre3-dev liblz4-dev liblzma-dev zlib1g-dev libgsl-dev libfreetype6-dev libx11-dev libxpm-dev libxft-dev libxext-dev libglu1-mesa-dev libglew-dev libftgl-dev libssl-dev libfftw3-dev libpng16-16 libjpeg62-turbo"
 
 RUN apt update && apt install --no-install-recommends -y ${TRANSIENT_SW}
 
@@ -58,7 +58,7 @@ ENV ROOTSYS /opt/root/v6-12-06
 
 #Get rid of everything we don't need
 RUN apt remove -y ${TRANSIENT_SW}
-RUN apt install --no-install-recommends -y libstdc++-6-dev libgfortran3 libfreetype6 libpcre3 liblz4 liblzma zlib1g libgsl2 libx11-6 libxpm4 libxft2 libxext6 python
+RUN apt install --no-install-recommends -y libstdc++-6-dev libgfortran3 libfreetype6 libpcre3 liblz4-1 liblzma5 zlib1g libgsl2 libx11-6 libxpm4 libxft2 libxext6 python libglu1-mesa libglew2.0 libftgl2 libssl1.1 libfftw3-3
 RUN apt autoremove -y --purge && apt clean
 
 WORKDIR /

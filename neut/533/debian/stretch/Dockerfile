@@ -1,10 +1,10 @@
 FROM picker24/cernlib2005:debian_stretch AS CERNLIB
 
 #NEUT image generally based on the ROOT image
-FROM picker24/root_6:debian_stretch
+FROM picker24/root_6_12_6:debian_stretch
 
 # Pull in CERNLIB
-COPY --from=CERNLIB /opt/cernlib /opt/
+COPY --from=CERNLIB /opt/cernlib /opt/cernlib
 
 ENV CERN /opt/cernlib
 ENV CERN_LEVEL 2005
@@ -13,7 +13,7 @@ ENV PATH "${CERN_ROOT}/bin:${PATH}"
 
 # Start this build
 
-ARG TRANSIENT_SW="build-essential gfortran csh"
+ARG TRANSIENT_SW="build-essential gfortran csh tcsh xutils-dev libgmp-dev"
 
 RUN apt update && apt install --no-install-recommends -y ${TRANSIENT_SW}
 
@@ -57,7 +57,7 @@ ENV NEUT_CARDS "/opt/neut/5.3.3/share/Cards"
 
 #Get rid of everything we don't need
 RUN apt remove -y ${TRANSIENT_SW}
-RUN apt install --no-install-recommends -y libstdc++6 libgfortran3
+RUN apt install --no-install-recommends -y libstdc++6 libgfortran3 libgmp10
 RUN apt autoremove -y --purge && apt clean
 
 WORKDIR /
