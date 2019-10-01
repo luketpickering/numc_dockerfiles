@@ -10,14 +10,14 @@ ADD NIWGReWeight /opt/NIWGReWeight-src
 WORKDIR /opt/NIWGReWeight-src
 RUN make
 
-RUN mkdir /opt/NIWGReWeight
-RUN cp /opt/NIWGReWeight-src/libNIWGReWeight.so /opt/NIWGReWeight/
-RUN cp /opt/NIWGReWeight-src/*.h /opt/NIWGReWeight/
-RUN cp -r /opt/NIWGReWeight-src/inputs /opt/NIWGReWeight/
+RUN mkdir -p /opt/NIWGReWeight/v1r23p2
+RUN cp /opt/NIWGReWeight-src/libNIWGReWeight.so /opt/NIWGReWeight/v1r23p2/
+RUN cp /opt/NIWGReWeight-src/*.h /opt/NIWGReWeight/v1r23p2/
+RUN cp -r /opt/NIWGReWeight-src/inputs /opt/NIWGReWeight/v1r23p2/
 
 RUN rm -rf /opt/NIWGReWeight-src
 
-ENV NIWG "/opt/NIWGReWeight"
+ENV NIWG "/opt/NIWGReWeight/v1r23p2"
 
 # T2KReWeight
 ## T2KReWeight src is not freely available, must take a copy of a local repository
@@ -59,14 +59,14 @@ RUN g++ genWeightsFromNeutroot_example.cxx \
   -L ${NIWG} -lNIWGReWeight\
   $(root-config --libs) -lgfortran
 
-RUN mkdir -p /opt/T2KReWeight/bin /opt/T2KReWeight/lib /opt/T2KReWeight/include
-RUN cp /opt/T2KReWeight-src/src/*.h /opt/T2KReWeight/include/
-RUN cp /opt/T2KReWeight-src/lib/libT2KReWeight.so /opt/T2KReWeight/lib/
-RUN cp /opt/T2KReWeight-src/app/genWeightsFromNeutroot_example /opt/T2KReWeight/bin/
+RUN mkdir -p /opt/T2KReWeight/v1r27p3/bin /opt/T2KReWeight/v1r27p3/lib /opt/T2KReWeight/v1r27p3/include
+RUN cp /opt/T2KReWeight-src/src/*.h /opt/T2KReWeight/v1r27p3/include/
+RUN cp /opt/T2KReWeight-src/lib/libT2KReWeight.so /opt/T2KReWeight/v1r27p3/lib/
+RUN cp /opt/T2KReWeight-src/app/genWeightsFromNeutroot_example /opt/T2KReWeight/v1r27p3/bin/
 
 RUN rm -rf /opt/T2KReWeight-src
 
-ENV T2KREWEIGHT "/opt/T2KReWeight"
+ENV T2KREWEIGHT "/opt/T2KReWeight/v1r27p3"
 
 #Get rid of everything we don't need
 RUN apt remove -y ${TRANSIENT_SW}

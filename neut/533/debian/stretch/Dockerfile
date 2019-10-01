@@ -1,7 +1,7 @@
 FROM picker24/cernlib2005:debian_stretch AS CERNLIB
 
 #NEUT image generally based on the ROOT image
-FROM picker24/root:debian_stretch
+FROM picker24/root_6:debian_stretch
 
 # Pull in CERNLIB
 COPY --from=CERNLIB /opt/cernlib /opt/
@@ -30,30 +30,30 @@ RUN ./Makeneutsmpl.csh
 WORKDIR /opt/neut-src/src/reweight
 RUN make all
 
-RUN mkdir -p /opt/neut/bin/
-RUN cp /opt/neut-src/src/neutsmpl/neutroot2 /opt/neut/bin/
-RUN cp -r /opt/neut-src/lib /opt/neut/
-RUN mkdir -p /opt/neut/include
-RUN cp /opt/neut-src/inc/*.h /opt/neut/include
-RUN cp /opt/neut-src/include/*.h /opt/neut/include
-RUN mkdir -p /opt/neut/src/neutclass
-RUN cp /opt/neut-src/src/neutclass/*.h /opt/neut/src/neutclass
-RUN cp /opt/neut-src/src/neutclass/*.so /opt/neut/src/neutclass
-RUN mkdir -p /opt/neut/src/reweight
-RUN cp /opt/neut-src/src/reweight/*.so /opt/neut/src/reweight
-RUN cp /opt/neut-src/src/reweight/*.h /opt/neut/src/reweight
-RUN cp /opt/neut-src/src/reweight/*.h /opt/neut/include
+RUN mkdir -p /opt/neut/5.3.3/bin/
+RUN cp /opt/neut-src/src/neutsmpl/neutroot2 /opt/neut/5.3.3/bin/
+RUN cp -r /opt/neut-src/lib /opt/neut/5.3.3/
+RUN mkdir -p /opt/neut/5.3.3/include
+RUN cp /opt/neut-src/inc/*.h /opt/neut/5.3.3/include
+RUN cp /opt/neut-src/include/*.h /opt/neut/5.3.3/include
+RUN mkdir -p /opt/neut/5.3.3/src/neutclass
+RUN cp /opt/neut-src/src/neutclass/*.h /opt/neut/5.3.3/src/neutclass
+RUN cp /opt/neut-src/src/neutclass/*.so /opt/neut/5.3.3/src/neutclass
+RUN mkdir -p /opt/neut/5.3.3/src/reweight
+RUN cp /opt/neut-src/src/reweight/*.so /opt/neut/5.3.3/src/reweight
+RUN cp /opt/neut-src/src/reweight/*.h /opt/neut/5.3.3/src/reweight
+RUN cp /opt/neut-src/src/reweight/*.h /opt/neut/5.3.3/include
 
-RUN mkdir -p /opt/neut/share/
-RUN cp -r /opt/neut-src/src/crsdat /opt/neut/share/
-RUN cp -r /opt/neut-src/src/neutsmpl/Cards /opt/neut/share/
+RUN mkdir -p /opt/neut/5.3.3/share/
+RUN cp -r /opt/neut-src/src/crsdat /opt/neut/5.3.3/share/
+RUN cp -r /opt/neut-src/src/neutsmpl/Cards /opt/neut/5.3.3/share/
 
 RUN rm -rf /opt/neut-src
 
-ENV PATH "/opt/neut/bin:${PATH}"
-ENV NEUT_ROOT "/opt/neut"
-ENV NEUT_CRSDAT "/opt/neut/share/crsdat"
-ENV NEUT_CARDS "/opt/neut/share/Cards"
+ENV PATH "/opt/neut/5.3.3/bin:${PATH}"
+ENV NEUT_ROOT "/opt/neut/5.3.3"
+ENV NEUT_CRSDAT "/opt/neut/5.3.3/share/crsdat"
+ENV NEUT_CARDS "/opt/neut/5.3.3/share/Cards"
 
 #Get rid of everything we don't need
 RUN apt remove -y ${TRANSIENT_SW}

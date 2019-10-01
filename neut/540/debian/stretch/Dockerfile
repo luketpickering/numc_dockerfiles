@@ -1,7 +1,7 @@
 FROM picker24/cernlib2005:debian_stretch AS CERNLIB
 
 #NEUT image generally based on the ROOT image
-FROM picker24/root:debian_stretch
+FROM picker24/root_6:debian_stretch
 
 # Pull in CERNLIB
 COPY --from=CERNLIB /opt/cernlib /opt/
@@ -28,7 +28,7 @@ WORKDIR /opt/neut-src/src
 RUN autoreconf -i --force
 RUN mkdir -p /opt/neut-build /opt/neut
 WORKDIR /opt/neut-build
-RUN /opt/neut-src/src/configure --prefix=/opt/neut
+RUN /opt/neut-src/src/configure --prefix=/opt/neut/5.4.0
 RUN make
 RUN make install
 RUN mkdir -p /opt/neut/share/
@@ -37,10 +37,10 @@ RUN cp -r /opt/neut-src/src/neutsmpl/Cards /opt/neut/share/
 WORKDIR /opt
 RUN rm -rf /opt/neut-src /opt/neut-build
 
-ENV PATH "/opt/neut/bin:${PATH}"
-ENV NEUT_ROOT "/opt/neut"
-ENV NEUT_CRSDAT "/opt/neut/share/crsdat"
-ENV NEUT_CARDS "/opt/neut/share/Cards"
+ENV PATH "/opt/neut/5.4.0/bin:${PATH}"
+ENV NEUT_ROOT "/opt/neut/5.4.0"
+ENV NEUT_CRSDAT "/opt/neut/5.4.0/share/crsdat"
+ENV NEUT_CARDS "/opt/neut/5.4.0/share/Cards"
 
 #Get rid of everything we don't need
 RUN apt remove -y ${TRANSIENT_SW}
