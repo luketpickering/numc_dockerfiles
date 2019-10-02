@@ -18,6 +18,7 @@ RUN cp -r /opt/NIWGReWeight-src/inputs /opt/NIWGReWeight/v1r23p2/
 RUN rm -rf /opt/NIWGReWeight-src
 
 ENV NIWG "/opt/NIWGReWeight/v1r23p2"
+ENV ROOT_INCLUDE_PATH "${NIWG}:${ROOT_INCLUDE_PATH}"
 
 # T2KReWeight
 ## T2KReWeight src is not freely available, must take a copy of a local repository
@@ -67,6 +68,8 @@ RUN cp /opt/T2KReWeight-src/app/genWeightsFromNeutroot_example /opt/T2KReWeight/
 RUN rm -rf /opt/T2KReWeight-src
 
 ENV T2KREWEIGHT "/opt/T2KReWeight/v1r27p3"
+ENV ROOT_INCLUDE_PATH "${T2KREWEIGHT}/include:${ROOT_INCLUDE_PATH}"
+
 
 #Get rid of everything we don't need
 RUN apt remove -y ${TRANSIENT_SW}

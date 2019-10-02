@@ -1,7 +1,7 @@
 FROM picker24/cernlib2005:debian_stretch AS CERNLIB
 
 #NEUT image generally based on the ROOT image
-FROM picker24/root_6_12_6:debian_stretch
+FROM picker24/root_6_12_6_min:debian_stretch
 
 # Pull in CERNLIB
 COPY --from=CERNLIB /opt/cernlib /opt/cernlib
@@ -19,18 +19,25 @@ RUN apt update && apt install --no-install-recommends -y ${TRANSIENT_SW}
 
 # NEUT
 ## NEUT src is not freely available, must take a copy of a local repository
-RUN mkdir /opt/neut-src
-ADD neut_5.3.3_maqefix_t2krw_v1r27p3.tar.gz /opt/neut-src
+RUN mkdir -p /opt/neut/5.3.3
+ADD neut_5.3.3_maqefix_t2krw_v1r27p3.tar.gz /opt/neut/5.3.3
 
-WORKDIR /opt/neut-src
-ENV NEUT_ROOT "/opt/neut-src"
+WORKDIR /opt/neut/5.3.3
+ENV NEUT_ROOT "/opt/neut/5.3.3"
 ENV FC "gfortran"
-WORKDIR /opt/neut-src/src/neutsmpl
+WORKDIR /opt/neut/5.3.3/src/neutsmpl
 RUN ./Makeneutsmpl.csh
-WORKDIR /opt/neut-src/src/reweight
+WORKDIR /opt/neut/5.3.3/src/reweight
 RUN make all
 
+# building it there adds sensible rpaths... move it out the way and
+# throw away the source
+WORKDIR /opt/neut/
+RUN mv /opt/neut/5.3.3 /opt/neut-src
 RUN mkdir -p /opt/neut/5.3.3/bin/
+#dummy directory... the rpaths are really stupid
+RUN mkdir -p /opt/neut/5.3.3/src/neutsmpl
+
 RUN cp /opt/neut-src/src/neutsmpl/neutroot2 /opt/neut/5.3.3/bin/
 RUN cp -r /opt/neut-src/lib /opt/neut/5.3.3/
 RUN mkdir -p /opt/neut/5.3.3/include
@@ -39,8 +46,10 @@ RUN cp /opt/neut-src/include/*.h /opt/neut/5.3.3/include
 RUN mkdir -p /opt/neut/5.3.3/src/neutclass
 RUN cp /opt/neut-src/src/neutclass/*.h /opt/neut/5.3.3/src/neutclass
 RUN cp /opt/neut-src/src/neutclass/*.so /opt/neut/5.3.3/src/neutclass
+RUN cp /opt/neut-src/src/neutclass/*.pcm /opt/neut/5.3.3/src/neutclass
 RUN mkdir -p /opt/neut/5.3.3/src/reweight
 RUN cp /opt/neut-src/src/reweight/*.so /opt/neut/5.3.3/src/reweight
+RUN cp /opt/neut-src/src/reweight/*.pcm /opt/neut/5.3.3/src/reweight
 RUN cp /opt/neut-src/src/reweight/*.h /opt/neut/5.3.3/src/reweight
 RUN cp /opt/neut-src/src/reweight/*.h /opt/neut/5.3.3/include
 
@@ -50,10 +59,12 @@ RUN cp -r /opt/neut-src/src/neutsmpl/Cards /opt/neut/5.3.3/share/
 
 RUN rm -rf /opt/neut-src
 
-ENV PATH "/opt/neut/5.3.3/bin:${PATH}"
 ENV NEUT_ROOT "/opt/neut/5.3.3"
-ENV NEUT_CRSDAT "/opt/neut/5.3.3/share/crsdat"
-ENV NEUT_CARDS "/opt/neut/5.3.3/share/Cards"
+ENV PATH "${NEUT_ROOT}/bin:${PATH}"
+ENV LD_LIBRARY_PATH "${NEUT_ROOT}/src/reweight:${NEUT_ROOT}/src/neutclass:${LD_LIBRARY_PATH}"
+ENV NEUT_CRSDAT "${NEUT_ROOT}/share/crsdat"
+ENV NEUT_CARDS "${NEUT_ROOT}/share/Cards"
+ENV ROOT_INCLUDE_PATH "${NEUT_ROOT}/include:${NEUT_ROOT}/src/neutclass:${NEUT_ROOT}/src/reweight:${ROOT_INCLUDE_PATH}"
 
 #Get rid of everything we don't need
 RUN apt remove -y ${TRANSIENT_SW}

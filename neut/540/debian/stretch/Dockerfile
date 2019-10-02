@@ -36,11 +36,12 @@ RUN cp -r /opt/neut-src/src/neutsmpl/Cards /opt/neut/share/
 WORKDIR /opt
 RUN rm -rf /opt/neut-src /opt/neut-build
 
-ENV PATH "/opt/neut/5.4.0/bin:${PATH}"
 ENV NEUT_ROOT "/opt/neut/5.4.0"
-ENV NEUT_CRSDAT "/opt/neut/5.4.0/share/crsdat"
-ENV NEUT_CARDS "/opt/neut/5.4.0/share/Cards"
-
+ENV PATH "${NEUT_ROOT}/bin:${PATH}"
+ENV LD_LIBRARY_PATH "${NEUT_ROOT}/lib:${LD_LIBRARY_PATH}"
+ENV NEUT_CRSDAT "${NEUT_ROOT}/share/crsdat"
+ENV NEUT_CARDS "${NEUT_ROOT}/share/Cards"
+ENV ROOT_INCLUDE_PATH "${NEUT_ROOT}/include:${NEUT_ROOT}/src/neutclass:${NEUT_ROOT}/src/reweight:${ROOT_INCLUDE_PATH}"
 #Get rid of everything we don't need
 RUN apt remove -y ${TRANSIENT_SW}
 RUN apt install --no-install-recommends -y libstdc++6 libgfortran3
