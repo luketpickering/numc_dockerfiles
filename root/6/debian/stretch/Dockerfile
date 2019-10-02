@@ -2,8 +2,6 @@ FROM debian:stretch-slim
 
 ARG N_CORE=8
 
-ARG ISMINIMAL=1
-
 # environment expansion tricks to get container build to be arg-dependent...
 
 ENV BUILD_MINIMAL=${ISMINIMAL:+ON}

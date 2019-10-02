@@ -1,9 +1,9 @@
 #!/bin/bash
 
 cd root/6/debian/stretch
-./build.sh ON
-if [ $? != 0 ]; then exit 1; fi
 ./build.sh OFF
+if [ $? != 0 ]; then exit 1; fi
+./build.sh ON
 if [ $? != 0 ]; then exit 1; fi
 
 cd -
