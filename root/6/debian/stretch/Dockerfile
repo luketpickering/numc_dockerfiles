@@ -2,18 +2,22 @@ FROM debian:stretch-slim
 
 ARG N_CORE=8
 
+ARG ISMINIMAL
 # environment expansion tricks to get container build to be arg-dependent...
 
-ENV BUILD_MINIMAL=${ISMINIMAL:+ON}
-ENV BUILD_MINIMAL=${BUILD_MINIMAL:-OFF}
+ARG BUILD_MINIMAL=${ISMINIMAL:+ON}
+ARG BUILD_MINIMAL=${BUILD_MINIMAL:-OFF}
 
-ENV TRANSIENT_SW=${ISMINIMAL:+"build-essential gfortran cmake git wget libpcre3-dev liblz4-dev liblzma-dev zlib1g-dev libgsl-dev libfreetype6-dev libxml2-dev"}
+ARG BUILD_MAXIMAL=${ISMINIMAL:+OFF}
+ARG BUILD_MAXIMAL=${BUILD_MAXIMAL:-ON}
 
-ENV TRANSIENT_SW=${TRANSIENT_SW:-"build-essential gfortran cmake git python-dev wget libpcre3-dev liblz4-dev liblzma-dev zlib1g-dev libgsl-dev libfreetype6-dev libx11-dev libxpm-dev libxft-dev libxext-dev libglu1-mesa-dev libglew-dev libftgl-dev libssl-dev libfftw3-dev libpng16-16 libjpeg62-turbo libxml2-dev"}
+ARG TRANSIENT_SW=${ISMINIMAL:+"build-essential gfortran cmake git wget libpcre3-dev liblz4-dev liblzma-dev zlib1g-dev libgsl-dev libfreetype6-dev libxml2-dev"}
 
-ENV INST_SW=${ISMINIMAL:+"libstdc++-6-dev libgfortran3 libfreetype6 libpcre3 liblz4-1 liblzma5 zlib1g libgsl2 libx11-6 libxpm4 libxml2"}
+ARG TRANSIENT_SW=${TRANSIENT_SW:-"build-essential gfortran cmake git python-dev wget libpcre3-dev liblz4-dev liblzma-dev zlib1g-dev libgsl-dev libfreetype6-dev libx11-dev libxpm-dev libxft-dev libxext-dev libglu1-mesa-dev libglew-dev libftgl-dev libssl-dev libfftw3-dev libpng16-16 libjpeg62-turbo libxml2-dev"}
 
-ENV INST_SW=${INST_SW:-"libstdc++-6-dev libgfortran3 libfreetype6 libpcre3 liblz4-1 liblzma5 zlib1g libgsl2 libx11-6 libxpm4 libxft2 libxext6 python libglu1-mesa libglew2.0 libftgl2 libssl1.1 libfftw3-3 libxml2"}
+ARG INST_SW=${ISMINIMAL:+"libstdc++-6-dev libgfortran3 libfreetype6 libpcre3 liblz4-1 liblzma5 zlib1g libgsl2 libx11-6 libxpm4 libxml2"}
+
+ARG INST_SW=${INST_SW:-"libstdc++-6-dev libgfortran3 libfreetype6 libpcre3 liblz4-1 liblzma5 zlib1g libgsl2 libx11-6 libxpm4 libxft2 libxext6 python libglu1-mesa libglew2.0 libftgl2 libssl1.1 libfftw3-3 libxml2"}
 
 RUN echo "BUILD_MINIMAL? ${BUILD_MINIMAL}"
 RUN echo "TRANSIENT_SW:  ${TRANSIENT_SW}"
@@ -50,7 +54,9 @@ RUN git checkout tags/v6-12-06
 WORKDIR /opt/root-build
 ENV USE_PARALLEL_MINUIT2=0
 RUN cmake /opt/root-src \
-  -Dminuit2=ON -Dtmva=OFF  -Dminimal=${BUILD_MINIMAL} \
+  -Dminuit2=ON \
+  -Dtmva=OFF -Drootfit=OFF -Dx11=${BUILD_MAXIMAL} -Dxft=${BUILD_MAXIMAL} \
+  -Dminimal=${BUILD_MINIMAL} \
   -Dpythia6=ON -DPYTHIA6_LIBRARY=${PYTHIA6}/libPythia6.so.6.4.28 \
   -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/opt/root/v6-12-06
 RUN make -j ${N_CORE}
@@ -73,7 +79,7 @@ ENV ROOTSYS /opt/root/v6-12-06
 
 #Get rid of everything we don't need
 RUN apt remove -y ${TRANSIENT_SW}
-RUN apt install --no-install-recommends -y ${INST_SW}}
+RUN apt install --no-install-recommends -y ${INST_SW}
 RUN apt autoremove -y --purge && apt clean
 
 WORKDIR /
