@@ -1,6 +1,9 @@
-FROM picker24/t2kreweight_v1r27p3:debian_stretch AS T2KREWEIGHT
+FROM localhost/picker24/t2kreweight_v1r27p3:debian_stretch AS T2KREWEIGHT
 
-FROM picker24/novarwgt_v00.23:debian_stretch
+FROM localhost/picker24/novarwgt_v00.23:debian_stretch
+
+WORKDIR /opt/root/v6-12-06/bin
+RUN if [ -e root ]; then echo "Found root"; else ln -s root.exe root; fi
 
 # Pull in CERNLIB
 COPY --from=T2KREWEIGHT /opt/cernlib /opt/cernlib
@@ -70,23 +73,38 @@ RUN rm -rf /opt/nuisance-src /opt/nuisance-build
 
 # #Get rid of everything we don't need
 RUN apt remove -y ${TRANSIENT_SW}
-RUN apt install --no-install-recommends -y libstdc++6 libgfortran3 libgsl2 liblog4cpp5v5 libxml2
+RUN apt install --no-install-recommends -y libstdc++6 libgfortran3 libgsl2 liblog4cpp5v5 libxml2 vim nano
 RUN apt autoremove -y --purge && apt clean
 
 # Some useful envvars
 
 ENV NOVASOUP "1000010010[0.10748284],1000060120[0.66656314],1000080160[0.02987494],1000070140[0.00026273],1000160320[0.00095980],1000170350[0.16110219],1000220480[0.03227276],1000501190[0.00119243],1000200400[0.00026317],1000110230[0.00002598]"
+ENV CHTARGET "1000060120[.923076],1000010010[.076924]"
+ENV H2OTARGET "1000080160[.888888],1000010010[.111112]"
 
 ENV FLUXES "/var/t2k-nova/fluxes"
+ENV NOVANDFLUX_NUMODE_FILE "${FLUXES}/NOvA/FHC_Flux_NOvA_ND_2017.root"
+ENV NOVANDFLUX_NUMODE_HIST "flux_numu"
+
+ENV ND280FLUX_NUMODE_FILE "${FLUXES}/T2K/t2kflux_2016_minus250kA.root"
+ENV ND280FLUX_NUMODE_HIST "enu_nd280_numu"
+
+ENV SKFLUX_NUMODE_FILE "${FLUXES}/T2K/t2kflux_2016_minus250kA.root"
+ENV SKFLUX_NUMODE_HIST "enu_sk_numu"
+
 ENV ACCEPT_MAPS "/var/t2k-nova/accmaps"
+
+ENV T2KNOVASCRIPTS "/var/t2k-nova/scripts"
 
 # Some files for t2k-nova studies
 
 RUN mkdir -p ${FLUXES}
 RUN mkdir -p ${ACCEPT_MAPS}
+RUN mkdir -p ${T2KNOVASCRIPTS}
 
 ADD fluxes ${FLUXES}
 ADD accmaps ${ACCEPT_MAPS}
+ADD t2k-nova-scripts ${T2KNOVASCRIPTS}
 
 WORKDIR /
 

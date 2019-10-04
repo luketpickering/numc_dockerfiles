@@ -1,4 +1,4 @@
-FROM picker24/root_6_12_6_min:debian_stretch
+FROM localhost/picker24/root_6_12_6_min:debian_stretch
 
 ARG N_CORE=8
 
@@ -48,6 +48,8 @@ RUN cp -r /opt/GENIE-src/Generator/src/Interfaces \
 RUN cp /opt/GENIE-src/Generator/VERSION /opt/GENIE/2_12_2/
 
 ENV GENIE "/opt/GENIE/2_12_2"
+
+RUN cp -r /opt/GENIE-src/Generator/config ${GENIE}/
 
 #copy in a config file that genie-config expects
 RUN mkdir -p ${GENIE}/src/make/

@@ -1,4 +1,4 @@
-FROM picker24/root_6_12_6_min:debian_stretch
+FROM localhost/picker24/root_6_12_6_min:debian_stretch
 
 ARG N_CORE=8
 
@@ -53,8 +53,10 @@ RUN make install
 RUN cp /opt/GENIE-src/Generator/data/evgen/pdfs/GRV98lo_patched.LHgrid \
        ${LHAPATH}/GRV98lo_patched.LHgrid
 
-ENV GENIE_REWEIGHT "/opt/GENIE/3_00_06"
 ENV GENIE "/opt/GENIE/3_00_06"
+ENV GENIE_REWEIGHT "${GENIE}"
+
+RUN cp -r /opt/GENIE-src/Generator/config ${GENIE}/
 
 #copy in a config file that genie-config expects
 RUN mkdir -p ${GENIE}/src/make/

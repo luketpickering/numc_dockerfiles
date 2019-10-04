@@ -1,4 +1,4 @@
-FROM picker24/genie_2_12_2:debian_stretch
+FROM localhost/picker24/genie_2_12_2:debian_stretch
 
 ARG N_CORE=8
 

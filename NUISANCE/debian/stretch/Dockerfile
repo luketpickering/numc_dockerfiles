@@ -1,6 +1,6 @@
-FROM picker24/t2kreweight_v1r27p3:debian_stretch AS T2KREWEIGHT
+FROM localhost/picker24/t2kreweight_v1r27p3:debian_stretch AS T2KREWEIGHT
 
-FROM picker24/genie_2_12_2:debian_stretch
+FROM localhost/picker24/genie_2_12_2:debian_stretch
 
 # Pull in CERNLIB
 COPY --from=T2KREWEIGHT /opt/cernlib /opt/cernlib
@@ -39,6 +39,8 @@ RUN ln -s ${T2KREWEIGHT}/include ${T2KREWEIGHT}/src
 
 ARG N_CORE=8
 
+ARG LEAVEDEV=false
+
 ARG TRANSIENT_SW="build-essential gfortran git cmake pkg-config libxml2-dev libgsl-dev liblog4cpp5-dev"
 
 RUN apt update && apt install --no-install-recommends -y ${TRANSIENT_SW}
@@ -65,11 +67,19 @@ ENV NUISANCE /opt/nuisance
 ENV PATH "${NUISANCE}/bin:${PATH}"
 ENV LD_LIBRARY_PATH "${NUISANCE}/lib:${T2KREWEIGHT}/lib:${NIWG}:${LD_LIBRARY_PATH}"
 
-RUN rm -rf /opt/nuisance-src /opt/nuisance-build
+RUN if [ "${LEAVEDEV}" = "false" ]; then \
+        rm -r /opt/nuisance-src; \
+    fi; \
+    rm -r /opt/nuisance-build
 
 # #Get rid of everything we don't need
-RUN apt remove -y ${TRANSIENT_SW}
-RUN apt install --no-install-recommends -y libstdc++6 libgfortran3 libgsl2 liblog4cpp5v5 libxml2
+RUN if [ "${LEAVEDEV}" = "false" ]; then \
+        apt remove -y ${TRANSIENT_SW}; \
+        apt install --no-install-recommends -y libstdc++6 libgfortran3 libgsl2 liblog4cpp5v5 libxml2; \
+    else \
+        apt install -y vim nano gdb; \
+    fi
+
 RUN apt autoremove -y --purge && apt clean
 
 WORKDIR /

@@ -1,7 +1,7 @@
-FROM picker24/cernlib2005:debian_stretch AS CERNLIB
+FROM localhost/picker24/cernlib2005:debian_stretch AS CERNLIB
 
 #NEUT image generally based on the ROOT image
-FROM picker24/root_6_12_6:debian_stretch
+FROM localhost/picker24/root_6_12_6:debian_stretch
 
 # Pull in CERNLIB
 COPY --from=CERNLIB /opt/cernlib /opt/cernlib
@@ -30,9 +30,9 @@ WORKDIR /opt/neut-build
 RUN /opt/neut-src/src/configure --prefix=/opt/neut/5.4.0
 RUN make -j ${N_CORE}
 RUN make install
-RUN mkdir -p /opt/neut/share/
-RUN cp -r /opt/neut-src/src/crsdat /opt/neut/share/
-RUN cp -r /opt/neut-src/src/neutsmpl/Cards /opt/neut/share/
+RUN mkdir -p /opt/neut/5.4.0/share/
+RUN cp -r /opt/neut-src/src/crsdat /opt/neut/5.4.0/share/
+RUN cp -r /opt/neut-src/src/neutsmpl/Cards /opt/neut/5.4.0/share/
 WORKDIR /opt
 RUN rm -rf /opt/neut-src /opt/neut-build
 
