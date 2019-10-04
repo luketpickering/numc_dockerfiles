@@ -1,0 +1,63 @@
+FROM localhost/picker24/cernlib2005:centos_6 AS CERNLIB
+
+FROM localhost/picker24/root_5_34_38:centos_6
+
+# Pull in CERNLIB
+COPY --from=CERNLIB /opt/cernlib /opt/cernlib
+
+ENV CERN /opt/cernlib
+ENV CERN_LEVEL 2005
+ENV CERN_ROOT "${CERN}/${CERN_LEVEL}"
+ENV PATH "${CERN_ROOT}/bin:${PATH}"
+
+RUN yum -y update && yum -y install epel-release
+
+RUN yum -y install gcc gcc-c++ gcc-gfortran csh tcsh ed which make
+
+# NEUT
+## NEUT src is not freely available, must take a copy of a local repository
+RUN mkdir /opt/neut-src
+ADD neut_5.3.3_maqefix_t2krw_v1r27p3.tar.gz /opt/neut-src
+
+WORKDIR /opt/neut-src
+ENV NEUT_ROOT "/opt/neut-src"
+ENV FC "gfortran"
+WORKDIR /opt/neut-src/src/neutsmpl
+RUN ./Makeneutsmpl.csh
+WORKDIR /opt/neut-src/src/reweight
+RUN make all
+
+RUN mkdir -p /opt/neut/5.3.3/bin/
+RUN cp /opt/neut-src/src/neutsmpl/neutroot2 /opt/neut/5.3.3/bin/
+RUN cp -r /opt/neut-src/lib /opt/neut/5.3.3/
+RUN mkdir -p /opt/neut/5.3.3/include
+RUN cp /opt/neut-src/inc/*.h /opt/neut/5.3.3/include
+RUN cp /opt/neut-src/include/*.h /opt/neut/5.3.3/include
+RUN mkdir -p /opt/neut/5.3.3/src/neutclass
+RUN cp /opt/neut-src/src/neutclass/*.h /opt/neut/5.3.3/src/neutclass
+RUN cp /opt/neut-src/src/neutclass/*.so /opt/neut/5.3.3/src/neutclass
+RUN mkdir -p /opt/neut/5.3.3/src/reweight
+RUN cp /opt/neut-src/src/reweight/*.so /opt/neut/5.3.3/src/reweight
+RUN cp /opt/neut-src/src/reweight/*.h /opt/neut/5.3.3/src/reweight
+RUN cp /opt/neut-src/src/reweight/*.h /opt/neut/5.3.3/include
+
+RUN mkdir -p /opt/neut/5.3.3/share/
+RUN cp -r /opt/neut-src/src/crsdat /opt/neut/5.3.3/share/
+RUN cp -r /opt/neut-src/src/neutsmpl/Cards /opt/neut/5.3.3/share/
+
+RUN rm -rf /opt/neut-src
+
+ENV NEUT_ROOT "/opt/neut/5.3.3"
+ENV PATH "${NEUT_ROOT}/bin:${PATH}"
+ENV NEUT_CRSDAT "${NEUT_ROOT}/share/crsdat"
+ENV NEUT_CARDS "${NEUT_ROOT}/share/Cards"
+
+#Get rid of everything we don't need
+RUN yum -y remove gcc gcc-c++ gcc-gfortran csh tcsh ed which make
+
+RUN yum clean all && rm -rf /var/cache/yum
+
+WORKDIR /
+
+ENTRYPOINT ["/bin/bash"]
+CMD []
