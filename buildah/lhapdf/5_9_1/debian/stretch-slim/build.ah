@@ -1,20 +1,20 @@
 #!/bin/bash
 
-NAME="lhapdf"
-VERSNAME="5_9_1"
-VERSSTR="5.9.1"
-
-FQCONTSTUB="${BB_REPO}/${NAME}_${VERSE}"
-FQCONTNAME="${FQCONTSTUB}:${TAG}"
-COMPILE_STAGE="${FQCONTSTUB}:build_int"
-
-ROOT_IT=debian:stretch-slim
-
 TAG=$1
 if [ -z $TAG ]; then
   echo "Error ${0} expected to be passed a tag."
   exit 1
 fi
+
+NAME="lhapdf"
+VERSNAME="5_9_1"
+VERSSTR="5.9.1"
+
+FQCONTSTUB="${BB_REPO}/${NAME}_${VERSNAME}"
+FQCONTNAME="${FQCONTSTUB}:${TAG}"
+COMPILE_STAGE="${FQCONTSTUB}:build_int"
+
+ROOT_IT=debian:stretch-slim
 
 if [ -z ${N_CORE} ]; then
     N_CORE=4
@@ -75,7 +75,7 @@ fi
 # FROM picker24/runbox:latest
 BASE=$(buildah from picker24/runbox:debian_stretch)
 
-inject ${BUILD} ${BASE} ${NAME} ${ROOT_IT} ${VERS}
+inject ${BUILD} ${BASE} ${NAME} ${ROOT_IT} ${VERSNAME}
 
 # WORKDIR /
 

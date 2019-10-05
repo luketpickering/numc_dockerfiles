@@ -14,16 +14,8 @@ fi
 source $BB_ROOT/common.funcs
 
 # COPY --from=BUILD /opt/lhapdf /opt/lhapdf
-cat << EOF > /tmp/$$.copy
-#!/bin/bash
-FROM_MP=\$(buildah mount ${FROM})
-buildah copy ${TO} \$FROM_MP/opt/lhapdf /opt/lhapdf
-buildah unmount ${FROM}
-EOF
 
-chmod +x /tmp/$$.copy
-buildah unshare /tmp/$$.copy
-rm /tmp/$$.copy
+copy_from_to ${FROM} ${TO} /opt/lhapdf /opt/lhapdf
 
 CONT_PATH=$(get_cont_env ${TO} PATH)
 echo "lhapdf PATH:${CONT_PATH}"

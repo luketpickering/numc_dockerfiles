@@ -103,3 +103,22 @@ function set_psone {
     STR=$2
     buildah run ${FROM} sed -i -e "\$a PS1=\"\\\\[\\\\033[01;31m\\\\]${STR}\\\\[\\\\033[00m\\\\]:\\\\[\\\\033[01;34m\\\\]\\\\w\\\\[\\\\033[00m\\\\]# \"" /root/.bashrc
 }
+
+function copy_from_to {
+    FROM=$1
+    TO=$2
+    SRC=$3
+    DEST=$4
+
+cat << EOF > /tmp/$$.copy
+#!/bin/bash
+FROM_MP=\$(buildah mount ${FROM})
+buildah copy ${TO} \$FROM_MP/opt/lhapdf /opt/lhapdf
+buildah unmount ${FROM}
+EOF
+
+    chmod +x /tmp/$$.copy
+    buildah unshare /tmp/$$.copy
+    rm /tmp/$$.copy
+
+}

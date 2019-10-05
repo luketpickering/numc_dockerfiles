@@ -8,6 +8,7 @@ fi
 
 export BB_ROOT
 export BUILDAH_FORMAT=docker
+export BB_REPO=picker24
 
 source $BB_ROOT/common.funcs
 
