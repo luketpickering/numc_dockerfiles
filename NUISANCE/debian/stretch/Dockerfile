@@ -1,6 +1,6 @@
-FROM localhost/picker24/t2kreweight_v1r27p3:debian_stretch AS T2KREWEIGHT
+FROM picker24/t2kreweight_v1r27p3:debian_stretch AS T2KREWEIGHT
 
-FROM localhost/picker24/genie_2_12_2:debian_stretch
+FROM picker24/genie_2_12_2:debian_stretch
 
 # Pull in CERNLIB
 COPY --from=T2KREWEIGHT /opt/cernlib /opt/cernlib

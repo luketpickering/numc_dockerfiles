@@ -23,7 +23,7 @@ if [ ! -z $1 ] && [ $1 == "ON" ]; then
   TAG_STUB=picker24/root_6_12_6_min
 fi
 
-podman build --layers=false \
+podman build --layers=false --format=docker \
               --build-arg BUILD_MINIMAL="${BUILD_MINIMAL}" \
               --build-arg BUILD_MAXIMAL="${BUILD_MAXIMAL}" \
               --build-arg TRANSIENT_SW="${TRANSIENT_SW}" \

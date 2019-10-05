@@ -1,7 +1,7 @@
-FROM localhost/picker24/cernlib2005:debian_stretch AS CERNLIB
+FROM picker24/cernlib2005:debian_stretch AS CERNLIB
 
 #NEUT image generally based on the ROOT image
-FROM localhost/picker24/root_6_12_6:debian_stretch
+FROM picker24/root_6_12_6:debian_stretch
 
 # Pull in CERNLIB
 COPY --from=CERNLIB /opt/cernlib /opt/cernlib

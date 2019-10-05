@@ -1,6 +1,6 @@
-FROM localhost/picker24/cernlib2005:centos_6 AS CERNLIB
+FROM picker24/cernlib2005:centos_6 AS CERNLIB
 
-FROM localhost/picker24/root_5_34_38:centos_6
+FROM picker24/root_5_34_38:centos_6
 
 # Pull in CERNLIB
 COPY --from=CERNLIB /opt/cernlib /opt/cernlib

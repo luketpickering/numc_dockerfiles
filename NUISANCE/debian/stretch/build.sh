@@ -1,5 +1,5 @@
 #!/bin/bash
-podman build --layers=false \
+podman build --layers=false --format=docker \
   --tag picker24/nuisance:debian_stretch \
   .
 

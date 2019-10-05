@@ -1,4 +1,4 @@
-FROM localhost/picker24/root_6_12_6:debian_stretch
+FROM picker24/root_6_12_6:debian_stretch
 
 ARG N_CORE=8
 

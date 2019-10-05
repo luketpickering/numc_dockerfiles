@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# cd pythia/debian/stretch
+# ./build.sh
+# if [ $? != 0 ]; then exit 1; fi
+
+# cd -
+
 # cd root/6/debian/stretch
 # ./build.sh OFF
 # if [ $? != 0 ]; then exit 1; fi
@@ -15,6 +21,12 @@
 # cd -
 
 # cd neut/540/debian/stretch
+# ./build.sh
+# if [ $? != 0 ]; then exit 1; fi
+
+# cd -
+
+# cd lhapdf/debian/stretch
 # ./build.sh
 # if [ $? != 0 ]; then exit 1; fi
 

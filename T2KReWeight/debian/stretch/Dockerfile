@@ -1,8 +1,34 @@
-FROM localhost/picker24/neut533:debian_stretch
+FROM picker24/neut533:latest AS NEUT
 
-ARG TRANSIENT_SW="build-essential libgfortran-6-dev"
+FROM picker24/buildbox:latest AS BUILD
 
-RUN apt update && apt install --no-install-recommends -y ${TRANSIENT_SW}
+COPY --from=NEUT /opt/cernlib /opt/cernlib
+
+ENV CERN /opt/cernlib
+ENV CERN_LEVEL 2005
+ENV CERN_ROOT "${CERN}/${CERN_LEVEL}"
+ENV PATH "${CERN_ROOT}/bin:${PATH}"
+
+COPY --from=NEUT /opt/root /opt/root
+
+ENV LD_LIBRARY_PATH "/opt/root/v6-12-06/lib:${LD_LIBRARY_PATH}"
+ENV LIBPATH /opt/root/v6-12-06/lib
+ENV JUPYTER_PATH /opt/root/v6-12-06/etc/notebook
+ENV PATH "/opt/root/v6-12-06/bin:/opt/root/v6-12-06/sbin:${PATH}"
+ENV DYLD_LIBRARY_PATH /opt/root/v6-12-06/lib
+ENV PYTHONPATH /opt/root/v6-12-06/lib
+ENV SHLIB_PATH /opt/root/v6-12-06/lib
+ENV CMAKE_PREFIX_PATH /opt/root/v6-12-06
+ENV ROOTSYS /opt/root/v6-12-06
+
+COPY --from=NEUT /opt/neut /opt/neut
+
+ENV NEUT_ROOT "/opt/neut/5.3.3"
+ENV PATH "${NEUT_ROOT}/bin:${PATH}"
+ENV LD_LIBRARY_PATH "${NEUT_ROOT}/src/reweight:${NEUT_ROOT}/src/neutclass:${LD_LIBRARY_PATH}"
+ENV NEUT_CRSDAT "${NEUT_ROOT}/share/crsdat"
+ENV NEUT_CARDS "${NEUT_ROOT}/share/Cards"
+ENV ROOT_INCLUDE_PATH "${NEUT_ROOT}/include:${NEUT_ROOT}/src/neutclass:${NEUT_ROOT}/src/reweight:${ROOT_INCLUDE_PATH}"
 
 # NIWGReWeight
 ## NIWGReWeight src is not freely available, must take a copy of a local repository
@@ -15,10 +41,7 @@ RUN cp /opt/NIWGReWeight-src/libNIWGReWeight.so /opt/NIWGReWeight/v1r23p2/
 RUN cp /opt/NIWGReWeight-src/*.h /opt/NIWGReWeight/v1r23p2/
 RUN cp -r /opt/NIWGReWeight-src/inputs /opt/NIWGReWeight/v1r23p2/
 
-RUN rm -rf /opt/NIWGReWeight-src
-
 ENV NIWG "/opt/NIWGReWeight/v1r23p2"
-ENV ROOT_INCLUDE_PATH "${NIWG}:${ROOT_INCLUDE_PATH}"
 
 # T2KReWeight
 ## T2KReWeight src is not freely available, must take a copy of a local repository
@@ -35,46 +58,55 @@ RUN ENV_CXXFLAGS=" $(root-config --cflags) " make autogen-headers
 RUN ENV_CXXFLAGS=" $(root-config --cflags) " make make-bin-lib-dir
 RUN ENV_CXXFLAGS=" $(root-config --cflags) " make src
 
-WORKDIR /opt/T2KReWeight-src/app
-RUN g++ genWeightsFromNeutroot_example.cxx \
-  -o genWeightsFromNeutroot_example \
-  $(root-config --cflags)\
-  -I ${T2KREWEIGHT}/src \
-  -I ${NIWG} \
-  -I ${NEUT_ROOT}/include \
-  -I ${NEUT_ROOT}/src/neutclass \
-  -I ${NEUT_ROOT}/src/reweight\
-  -L ${T2KREWEIGHT}/lib -l T2KReWeight\
-  -L ${NEUT_ROOT}/src/reweight -lNReWeight \
-  -Wl,--start-group\
-    ${NEUT_ROOT}/src/neutclass/neutctrl.so\
-    ${NEUT_ROOT}/src/neutclass/neutfsivert.so\
-    ${NEUT_ROOT}/src/neutclass/neutrootTreeSingleton.so\
-    ${NEUT_ROOT}/src/neutclass/neutvtx.so\
-    ${NEUT_ROOT}/src/neutclass/neutfsipart.so\
-    ${NEUT_ROOT}/src/neutclass/neutpart.so\
-    ${NEUT_ROOT}/src/neutclass/neutvect.so \
-    -L ${NEUT_ROOT}/lib/Linux_pc\
-    -lneutcore -lnuccorrspl -lnuceff -lpartnuck -lskmcsvc -ltauola\
-  -Wl,--end-group\
-  -L ${NIWG} -lNIWGReWeight\
-  $(root-config --libs) -lgfortran
-
 RUN mkdir -p /opt/T2KReWeight/v1r27p3/bin /opt/T2KReWeight/v1r27p3/lib /opt/T2KReWeight/v1r27p3/include
 RUN cp /opt/T2KReWeight-src/src/*.h /opt/T2KReWeight/v1r27p3/include/
 RUN cp /opt/T2KReWeight-src/lib/libT2KReWeight.so /opt/T2KReWeight/v1r27p3/lib/
 RUN cp /opt/T2KReWeight-src/app/genWeightsFromNeutroot_example /opt/T2KReWeight/v1r27p3/bin/
 
-RUN rm -rf /opt/T2KReWeight-src
+ENV T2KREWEIGHT "/opt/T2KReWeight/v1r27p3"
+
+#Things often include T2KReWeight
+RUN ln -s ${T2KREWEIGHT}/include ${T2KREWEIGHT}/src
+
+FROM picker24/runbox:latest
+
+COPY --from=NEUT /opt/cernlib /opt/cernlib
+
+ENV CERN /opt/cernlib
+ENV CERN_LEVEL 2005
+ENV CERN_ROOT "${CERN}/${CERN_LEVEL}"
+ENV PATH "${CERN_ROOT}/bin:${PATH}"
+
+COPY --from=NEUT /opt/root /opt/root
+
+ENV LD_LIBRARY_PATH "/opt/root/v6-12-06/lib:${LD_LIBRARY_PATH}"
+ENV LIBPATH /opt/root/v6-12-06/lib
+ENV JUPYTER_PATH /opt/root/v6-12-06/etc/notebook
+ENV PATH "/opt/root/v6-12-06/bin:/opt/root/v6-12-06/sbin:${PATH}"
+ENV DYLD_LIBRARY_PATH /opt/root/v6-12-06/lib
+ENV PYTHONPATH /opt/root/v6-12-06/lib
+ENV SHLIB_PATH /opt/root/v6-12-06/lib
+ENV CMAKE_PREFIX_PATH /opt/root/v6-12-06
+ENV ROOTSYS /opt/root/v6-12-06
+
+COPY --from=NEUT /opt/neut /opt/neut
+
+ENV NEUT_ROOT "/opt/neut/5.3.3"
+ENV PATH "${NEUT_ROOT}/bin:${PATH}"
+ENV LD_LIBRARY_PATH "${NEUT_ROOT}/src/reweight:${NEUT_ROOT}/src/neutclass:${LD_LIBRARY_PATH}"
+ENV NEUT_CRSDAT "${NEUT_ROOT}/share/crsdat"
+ENV NEUT_CARDS "${NEUT_ROOT}/share/Cards"
+ENV ROOT_INCLUDE_PATH "${NEUT_ROOT}/include:${NEUT_ROOT}/src/neutclass:${NEUT_ROOT}/src/reweight:${ROOT_INCLUDE_PATH}"
+
+COPY --from=BUILD /opt/NIWGReWeight /opt/NIWGReWeight
+
+ENV NIWG "/opt/NIWGReWeight/v1r23p2"
+ENV LD_LIBRARY_PATH "${NIWG}:${LD_LIBRARY_PATH}"
+
+COPY --from=BUILD /opt/T2KReWeight /opt/T2KReWeight
 
 ENV T2KREWEIGHT "/opt/T2KReWeight/v1r27p3"
-ENV ROOT_INCLUDE_PATH "${T2KREWEIGHT}/include:${ROOT_INCLUDE_PATH}"
-
-
-#Get rid of everything we don't need
-RUN apt remove -y ${TRANSIENT_SW}
-RUN apt install --no-install-recommends -y libstdc++6 libgfortran3
-RUN apt autoremove -y --purge && apt clean
+ENV LD_LIBRARY_PATH "${T2KREWEIGHT}/lib:${LD_LIBRARY_PATH}"
 
 WORKDIR /
 

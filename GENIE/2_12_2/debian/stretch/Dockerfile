@@ -1,24 +1,47 @@
-FROM localhost/picker24/root_6_12_6_min:debian_stretch
+FROM picker24/root_6_12_6_min:latest AS ROOT
 
-ARG N_CORE=8
+FROM picker24/lhapdf_5_9_1:latest AS LHAPDF
 
-ARG TRANSIENT_SW="build-essential gfortran git python wget libxml2-dev libgsl-dev liblog4cpp5-dev"
+FROM picker24/buildbox:latest AS BUILD
 
-RUN apt update && apt install --no-install-recommends -y ${TRANSIENT_SW}
+# Pull down and trim the splines
+RUN mkdir -p /opt/genie-splines
+WORKDIR /opt/genie-splines
+RUN wget --no-check-certificate https://scisoft.fnal.gov/scisoft/packages/genie_xsec/v2_12_0/genie_xsec-2.12.0-noarch-DefaultPlusMECWithNC.tar.bz2
+RUN tar -xvf genie_xsec-2.12.0-noarch-DefaultPlusMECWithNC.tar.bz2
 
-RUN mkdir /opt/lhapdf-src
-WORKDIR /opt/lhapdf-src
-RUN wget --no-check-certificate \
-  https://lhapdf.hepforge.org/downloads/?f=lhapdf-5.9.1.tar.gz \
-  -O lhapdf-5.9.1.tar.gz
-RUN tar -zxvf lhapdf-5.9.1.tar.gz
-RUN mkdir /opt/lhapdf-build
-WORKDIR /opt/lhapdf-build/
-RUN /opt/lhapdf-src/lhapdf-5.9.1/configure \
-            --prefix=/opt/lhapdf/5.9.1 --disable-old-ccwrap --disable-pyext
-RUN make install -j ${N_CORE}
+WORKDIR /opt/genie-splines/genie_xsec/v2_12_0/NULL/DefaultPlusMECWithNC/data
+ADD t2k-nova.gxspl.min.awk /opt/genie-splines/genie_xsec/v2_12_0/NULL/DefaultPlusMECWithNC/data/
 
-RUN rm -r /opt/lhapdf-build /opt/lhapdf-src
+RUN awk -f t2k-nova.gxspl.min.awk gxspl-FNALsmall.xml > gxspl-t2k-nova.xml
+RUN gzip gxspl-t2k-nova.xml
+
+RUN mkdir -p /var/genie/xsec/DefaultPlusMECWithNC
+RUN mv UserPhysicsOptions.xml \
+       EventGeneratorListAssembler.xml \
+       gxspl-FNALsmall.xml \
+    /var/genie/xsec/DefaultPlusMECWithNC/
+
+# Pull in dependencies
+
+COPY --from=ROOT /opt/pythia6 /opt/pythia6
+
+ENV PYTHIA6 "/opt/pythia6/6.4.28"
+ENV LD_LIBRARY_PATH "${PYTHIA6}/lib:${LD_LIBRARY_PATH}"
+
+COPY --from=ROOT /opt/root /opt/root
+
+ENV LD_LIBRARY_PATH "/opt/root/v6-12-06/lib:${LD_LIBRARY_PATH}"
+ENV LIBPATH /opt/root/v6-12-06/lib
+ENV JUPYTER_PATH /opt/root/v6-12-06/etc/notebook
+ENV PATH "/opt/root/v6-12-06/bin:/opt/root/v6-12-06/sbin:${PATH}"
+ENV DYLD_LIBRARY_PATH /opt/root/v6-12-06/lib
+ENV PYTHONPATH /opt/root/v6-12-06/lib
+ENV SHLIB_PATH /opt/root/v6-12-06/lib
+ENV CMAKE_PREFIX_PATH /opt/root/v6-12-06
+ENV ROOTSYS /opt/root/v6-12-06
+
+COPY --from=LHAPDF /opt/lhapdf /opt/lhapdf
 
 ENV LHAPATH "/opt/lhapdf/5.9.1"
 ENV LHAPDF_INC "${LHAPATH}/include"
@@ -28,28 +51,31 @@ ENV LD_LIBRARY_PATH "${LHAPDF_LIB}:${LD_LIBRARY_PATH}"
 
 ENV GENIE "/opt/GENIE-src/Generator"
 
+# build
 RUN mkdir /opt/GENIE-src
 WORKDIR /opt/GENIE-src
 RUN git clone -c http.sslVerify=false \
               https://github.com/GENIE-MC/Generator.git
 WORKDIR /opt/GENIE-src/Generator
 RUN git checkout R-2_12_2
-RUN ./configure --prefix=/opt/GENIE/2_12_2 --enable-rwght
-RUN make
-RUN mkdir -p /opt/GENIE/2_12_2
+RUN ./configure --prefix=/opt/genie/2_12_2 --enable-rwght
+RUN make 
+RUN mkdir -p /opt/genie/2_12_2
 RUN make install
 
 RUN cp /opt/GENIE-src/Generator/data/evgen/pdfs/GRV98lo_patched.LHgrid \
        ${LHAPATH}/GRV98lo_patched.LHgrid
 
+ENV GENIE "/opt/genie/2_12_2"
+
 #GENIE install doesn't fancy installing this header, lets help
 RUN cp -r /opt/GENIE-src/Generator/src/Interfaces \
-          /opt/GENIE/2_12_2/include/GENIE/
-RUN cp /opt/GENIE-src/Generator/VERSION /opt/GENIE/2_12_2/
-
-ENV GENIE "/opt/GENIE/2_12_2"
+          ${GENIE}/include/GENIE/
+RUN cp /opt/GENIE-src/Generator/VERSION ${GENIE}/
 
 RUN cp -r /opt/GENIE-src/Generator/config ${GENIE}/
+RUN mkdir -p ${GENIE}/data/
+RUN cp -r /opt/GENIE-src/Generator/data/evgen ${GENIE}/data/
 
 #copy in a config file that genie-config expects
 RUN mkdir -p ${GENIE}/src/make/
@@ -58,29 +84,44 @@ RUN cp /opt/GENIE-src/Generator/src/make/Make.config_no_paths ${GENIE}/src/make/
 WORKDIR ${GENIE}/src
 RUN for i in ${GENIE}/include/GENIE/*; do ln -s ${i}; done
 
+FROM picker24/runbox:latest
+
+COPY --from=ROOT /opt/pythia6 /opt/pythia6
+
+ENV PYTHIA6 "/opt/pythia6/6.4.28"
+ENV LD_LIBRARY_PATH "${PYTHIA6}/lib:${LD_LIBRARY_PATH}"
+
+COPY --from=ROOT /opt/root /opt/root
+
+ENV LD_LIBRARY_PATH "/opt/root/v6-12-06/lib:${LD_LIBRARY_PATH}"
+ENV LIBPATH /opt/root/v6-12-06/lib
+ENV JUPYTER_PATH /opt/root/v6-12-06/etc/notebook
+ENV PATH "/opt/root/v6-12-06/bin:/opt/root/v6-12-06/sbin:${PATH}"
+ENV DYLD_LIBRARY_PATH /opt/root/v6-12-06/lib
+ENV PYTHONPATH /opt/root/v6-12-06/lib
+ENV SHLIB_PATH /opt/root/v6-12-06/lib
+ENV CMAKE_PREFIX_PATH /opt/root/v6-12-06
+ENV ROOTSYS /opt/root/v6-12-06
+
+COPY --from=LHAPDF /opt/lhapdf /opt/lhapdf
+
+ENV LHAPATH "/opt/lhapdf/5.9.1"
+ENV LHAPDF_INC "${LHAPATH}/include"
+ENV LHAPDF_LIB "${LHAPATH}/lib"
+ENV PATH "${LHAPATH}/bin:${PATH}"
+ENV LD_LIBRARY_PATH "${LHAPDF_LIB}:${LD_LIBRARY_PATH}"
+
+COPY --from=BUILD /opt/genie /opt/genie
+COPY --from=BUILD /var/genie /var/genie
+
+ENV GENIE "/opt/genie/2_12_2"
 ENV PATH "${GENIE}/bin:${PATH}"
-ENV LD_LIBRARY_PATH "${GENIE}/lib:${PYTHIA6}:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH "${GENIE}/lib:${LD_LIBRARY_PATH}"
 ENV ROOT_INCLUDE_PATH "${GENIE}/include/GENIE:${ROOT_INCLUDE_PATH}"
 
-RUN rm -r /opt/GENIE-src
-
-RUN mkdir -p /var/GENIE/xsec/DefaultPlusMECWithNC
-WORKDIR /var/GENIE/xsec/DefaultPlusMECWithNC
-RUN wget --no-check-certificate https://scisoft.fnal.gov/scisoft/packages/genie_xsec/v2_12_0/genie_xsec-2.12.0-noarch-DefaultPlusMECWithNC.tar.bz2
-RUN tar -xvf genie_xsec-2.12.0-noarch-DefaultPlusMECWithNC.tar.bz2
-RUN mv genie_xsec/v2_12_0/NULL/DefaultPlusMECWithNC/data/UserPhysicsOptions.xml\
- genie_xsec/v2_12_0/NULL/DefaultPlusMECWithNC/data/EventGeneratorListAssembler.xml \
- genie_xsec/v2_12_0/NULL/DefaultPlusMECWithNC/data/gxspl-FNALsmall.xml .
-RUN gzip gxspl-FNALsmall.xml
-RUN rm -r genie_xsec genie_xsec-2.12.0-noarch-DefaultPlusMECWithNC.tar.bz2
-
-ENV GENIE_XSEC_DIR /var/GENIE/xsec/DefaultPlusMECWithNC
-ENV GXMLPATH ${GENIE_XSEC_DIR}:${GXMLPATH}
-
-# #Get rid of everything we don't need
-RUN apt remove -y ${TRANSIENT_SW}
-RUN apt install --no-install-recommends -y libstdc++6 libgfortran3 libgsl2 liblog4cpp5v5 libxml2
-RUN apt autoremove -y --purge && apt clean
+ENV GENIE_XSEC_DIR "/var/genie/xsec/DefaultPlusMECWithNC"
+ENV GENIE_XSEC_FILE "${GENIE_XSEC_DIR}/gxspl-t2k-nova.xml.gz"
+ENV GXMLPATH "${GENIE_XSEC_DIR}:${GXMLPATH}"
 
 WORKDIR /
 

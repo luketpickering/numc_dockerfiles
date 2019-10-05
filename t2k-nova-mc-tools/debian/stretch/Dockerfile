@@ -1,11 +1,53 @@
-FROM localhost/picker24/t2kreweight_v1r27p3:debian_stretch AS T2KREWEIGHT
+FROM picker24/novarwgt_v00.23:latest AS NOVARWGT
 
-FROM localhost/picker24/novarwgt_v00.23:debian_stretch
+FROM picker24/t2kreweight_v1r27p3:latest AS T2KREWEIGHT
 
-WORKDIR /opt/root/v6-12-06/bin
-RUN if [ -e root ]; then echo "Found root"; else ln -s root.exe root; fi
+FROM picker24/buildbox:latest AS BUILD
 
-# Pull in CERNLIB
+COPY --from=NOVARWGT /opt/pythia6 /opt/pythia6
+
+ENV PYTHIA6 "/opt/pythia6/6.4.28"
+ENV LD_LIBRARY_PATH "${PYTHIA6}/lib:${LD_LIBRARY_PATH}"
+
+COPY --from=NOVARWGT /opt/root /opt/root
+
+ENV LD_LIBRARY_PATH "/opt/root/v6-12-06/lib:${LD_LIBRARY_PATH}"
+ENV LIBPATH /opt/root/v6-12-06/lib
+ENV JUPYTER_PATH /opt/root/v6-12-06/etc/notebook
+ENV PATH "/opt/root/v6-12-06/bin:/opt/root/v6-12-06/sbin:${PATH}"
+ENV DYLD_LIBRARY_PATH /opt/root/v6-12-06/lib
+ENV PYTHONPATH /opt/root/v6-12-06/lib
+ENV SHLIB_PATH /opt/root/v6-12-06/lib
+ENV CMAKE_PREFIX_PATH /opt/root/v6-12-06
+ENV ROOTSYS /opt/root/v6-12-06
+
+COPY --from=NOVARWGT /opt/lhapdf /opt/lhapdf
+
+ENV LHAPATH "/opt/lhapdf/5.9.1"
+ENV LHAPDF_INC "${LHAPATH}/include"
+ENV LHAPDF_LIB "${LHAPATH}/lib"
+ENV PATH "${LHAPATH}/bin:${PATH}"
+ENV LD_LIBRARY_PATH "${LHAPDF_LIB}:${LD_LIBRARY_PATH}"
+
+COPY --from=NOVARWGT /opt/genie /opt/genie
+COPY --from=NOVARWGT /var/genie /var/genie
+
+ENV GENIE "/opt/genie/2_12_2"
+ENV PATH "${GENIE}/bin:${PATH}"
+ENV LD_LIBRARY_PATH "${GENIE}/lib:${LD_LIBRARY_PATH}"
+ENV ROOT_INCLUDE_PATH "${GENIE}/include/GENIE:${ROOT_INCLUDE_PATH}"
+
+ENV GENIE_XSEC_DIR "/var/genie/xsec/DefaultPlusMECWithNC"
+ENV GENIE_XSEC_FILE "${GENIE_XSEC_DIR}/gxspl-t2k-nova.xml.gz"
+ENV GXMLPATH "${GENIE_XSEC_DIR}:${GXMLPATH}"
+
+ENV PYTHIA6_LIBRARY ${PYTHIA6}
+
+COPY --from=NOVARWGT /opt/NOvARwgt /opt/NOvARwgt
+
+ENV NOVARWGT "/opt/NOvARwgt/v00.23"
+ENV LD_LIBRARY_PATH "${NOVARWGT}/lib:${LD_LIBRARY_PATH}"
+
 COPY --from=T2KREWEIGHT /opt/cernlib /opt/cernlib
 
 ENV CERN /opt/cernlib
@@ -13,7 +55,6 @@ ENV CERN_LEVEL 2005
 ENV CERN_ROOT "${CERN}/${CERN_LEVEL}"
 ENV PATH "${CERN_ROOT}/bin:${PATH}"
 
-# Pull in NEUT
 COPY --from=T2KREWEIGHT /opt/neut /opt/neut
 
 ENV NEUT_ROOT "/opt/neut/5.3.3"
@@ -23,29 +64,17 @@ ENV NEUT_CRSDAT "${NEUT_ROOT}/share/crsdat"
 ENV NEUT_CARDS "${NEUT_ROOT}/share/Cards"
 ENV ROOT_INCLUDE_PATH "${NEUT_ROOT}/include:${NEUT_ROOT}/src/neutclass:${NEUT_ROOT}/src/reweight:${ROOT_INCLUDE_PATH}"
 
-# Pull in NIWGReWeight
 COPY --from=T2KREWEIGHT /opt/NIWGReWeight /opt/NIWGReWeight
 
 ENV NIWG "/opt/NIWGReWeight/v1r23p2"
-ENV ROOT_INCLUDE_PATH "${NIWG}:${ROOT_INCLUDE_PATH}"
+ENV LD_LIBRARY_PATH "${NIWG}:${LD_LIBRARY_PATH}"
 
-# Pull in T2KReWeight
 COPY --from=T2KREWEIGHT /opt/T2KReWeight /opt/T2KReWeight
 
 ENV T2KREWEIGHT "/opt/T2KReWeight/v1r27p3"
-ENV ROOT_INCLUDE_PATH "${T2KREWEIGHT}/include:${ROOT_INCLUDE_PATH}"
-
-# NUISANCE tries to include the src directory, symlink to the right one
-RUN ln -s ${T2KREWEIGHT}/include ${T2KREWEIGHT}/src
+ENV LD_LIBRARY_PATH "${T2KREWEIGHT}/lib:${LD_LIBRARY_PATH}"
 
 #Start NUISANCE build
-
-ARG N_CORE=8
-
-ARG TRANSIENT_SW="build-essential gfortran git cmake pkg-config libxml2-dev libgsl-dev liblog4cpp5-dev"
-
-RUN apt update && apt install --no-install-recommends -y ${TRANSIENT_SW}
-
 RUN mkdir -p /opt/nuisance-src
 WORKDIR /opt/nuisance-src
 RUN git clone -c http.sslVerify=false \
@@ -65,46 +94,83 @@ RUN cp -r /opt/nuisance-src/nuisance/data \
           /opt/nuisance-src/nuisance/parameters \
           /opt/nuisance/
 
+FROM picker24/runbox:latest 
+
+COPY --from=NOVARWGT /opt/pythia6 /opt/pythia6
+
+ENV PYTHIA6 "/opt/pythia6/6.4.28"
+ENV LD_LIBRARY_PATH "${PYTHIA6}/lib:${LD_LIBRARY_PATH}"
+
+COPY --from=NOVARWGT /opt/root /opt/root
+
+ENV LD_LIBRARY_PATH "/opt/root/v6-12-06/lib:${LD_LIBRARY_PATH}"
+ENV LIBPATH /opt/root/v6-12-06/lib
+ENV JUPYTER_PATH /opt/root/v6-12-06/etc/notebook
+ENV PATH "/opt/root/v6-12-06/bin:/opt/root/v6-12-06/sbin:${PATH}"
+ENV DYLD_LIBRARY_PATH /opt/root/v6-12-06/lib
+ENV PYTHONPATH /opt/root/v6-12-06/lib
+ENV SHLIB_PATH /opt/root/v6-12-06/lib
+ENV CMAKE_PREFIX_PATH /opt/root/v6-12-06
+ENV ROOTSYS /opt/root/v6-12-06
+
+COPY --from=NOVARWGT /opt/lhapdf /opt/lhapdf
+
+ENV LHAPATH "/opt/lhapdf/5.9.1"
+ENV LHAPDF_INC "${LHAPATH}/include"
+ENV LHAPDF_LIB "${LHAPATH}/lib"
+ENV PATH "${LHAPATH}/bin:${PATH}"
+ENV LD_LIBRARY_PATH "${LHAPDF_LIB}:${LD_LIBRARY_PATH}"
+
+COPY --from=NOVARWGT /opt/genie /opt/genie
+COPY --from=NOVARWGT /var/genie /var/genie
+
+ENV GENIE "/opt/genie/2_12_2"
+ENV PATH "${GENIE}/bin:${PATH}"
+ENV LD_LIBRARY_PATH "${GENIE}/lib:${LD_LIBRARY_PATH}"
+ENV ROOT_INCLUDE_PATH "${GENIE}/include/GENIE:${ROOT_INCLUDE_PATH}"
+
+ENV GENIE_XSEC_DIR "/var/genie/xsec/DefaultPlusMECWithNC"
+ENV GENIE_XSEC_FILE "${GENIE_XSEC_DIR}/gxspl-t2k-nova.xml.gz"
+ENV GXMLPATH "${GENIE_XSEC_DIR}:${GXMLPATH}"
+
+ENV PYTHIA6_LIBRARY ${PYTHIA6}
+
+COPY --from=NOVARWGT /opt/NOvARwgt /opt/NOvARwgt
+
+ENV NOVARWGT "/opt/NOvARwgt/v00.23"
+ENV LD_LIBRARY_PATH "${NOVARWGT}/lib:${LD_LIBRARY_PATH}"
+
+COPY --from=T2KREWEIGHT /opt/cernlib /opt/cernlib
+
+ENV CERN /opt/cernlib
+ENV CERN_LEVEL 2005
+ENV CERN_ROOT "${CERN}/${CERN_LEVEL}"
+ENV PATH "${CERN_ROOT}/bin:${PATH}"
+
+COPY --from=T2KREWEIGHT /opt/neut /opt/neut
+
+ENV NEUT_ROOT "/opt/neut/5.3.3"
+ENV PATH "${NEUT_ROOT}/bin:${PATH}"
+ENV LD_LIBRARY_PATH "${NEUT_ROOT}/src/reweight:${NEUT_ROOT}/src/neutclass:${LD_LIBRARY_PATH}"
+ENV NEUT_CRSDAT "${NEUT_ROOT}/share/crsdat"
+ENV NEUT_CARDS "${NEUT_ROOT}/share/Cards"
+ENV ROOT_INCLUDE_PATH "${NEUT_ROOT}/include:${NEUT_ROOT}/src/neutclass:${NEUT_ROOT}/src/reweight:${ROOT_INCLUDE_PATH}"
+
+COPY --from=T2KREWEIGHT /opt/NIWGReWeight /opt/NIWGReWeight
+
+ENV NIWG "/opt/NIWGReWeight/v1r23p2"
+ENV LD_LIBRARY_PATH "${NIWG}:${LD_LIBRARY_PATH}"
+
+COPY --from=T2KREWEIGHT /opt/T2KReWeight /opt/T2KReWeight
+
+ENV T2KREWEIGHT "/opt/T2KReWeight/v1r27p3"
+ENV LD_LIBRARY_PATH "${T2KREWEIGHT}/lib:${LD_LIBRARY_PATH}"
+
+COPY --from=BUILD /opt/nuisance /opt/nuisance
+
 ENV NUISANCE /opt/nuisance
 ENV PATH "${NUISANCE}/bin:${PATH}"
-ENV LD_LIBRARY_PATH "${NUISANCE}/lib:${NOVARWGT}/lib:${T2KREWEIGHT}/lib:${NIWG}:${LD_LIBRARY_PATH}"
-
-RUN rm -rf /opt/nuisance-src /opt/nuisance-build
-
-# #Get rid of everything we don't need
-RUN apt remove -y ${TRANSIENT_SW}
-RUN apt install --no-install-recommends -y libstdc++6 libgfortran3 libgsl2 liblog4cpp5v5 libxml2 vim nano
-RUN apt autoremove -y --purge && apt clean
-
-# Some useful envvars
-
-ENV NOVASOUP "1000010010[0.10748284],1000060120[0.66656314],1000080160[0.02987494],1000070140[0.00026273],1000160320[0.00095980],1000170350[0.16110219],1000220480[0.03227276],1000501190[0.00119243],1000200400[0.00026317],1000110230[0.00002598]"
-ENV CHTARGET "1000060120[.923076],1000010010[.076924]"
-ENV H2OTARGET "1000080160[.888888],1000010010[.111112]"
-
-ENV FLUXES "/var/t2k-nova/fluxes"
-ENV NOVANDFLUX_NUMODE_FILE "${FLUXES}/NOvA/FHC_Flux_NOvA_ND_2017.root"
-ENV NOVANDFLUX_NUMODE_HIST "flux_numu"
-
-ENV ND280FLUX_NUMODE_FILE "${FLUXES}/T2K/t2kflux_2016_minus250kA.root"
-ENV ND280FLUX_NUMODE_HIST "enu_nd280_numu"
-
-ENV SKFLUX_NUMODE_FILE "${FLUXES}/T2K/t2kflux_2016_minus250kA.root"
-ENV SKFLUX_NUMODE_HIST "enu_sk_numu"
-
-ENV ACCEPT_MAPS "/var/t2k-nova/accmaps"
-
-ENV T2KNOVASCRIPTS "/var/t2k-nova/scripts"
-
-# Some files for t2k-nova studies
-
-RUN mkdir -p ${FLUXES}
-RUN mkdir -p ${ACCEPT_MAPS}
-RUN mkdir -p ${T2KNOVASCRIPTS}
-
-ADD fluxes ${FLUXES}
-ADD accmaps ${ACCEPT_MAPS}
-ADD t2k-nova-scripts ${T2KNOVASCRIPTS}
+ENV LD_LIBRARY_PATH "${NUISANCE}/lib:${LD_LIBRARY_PATH}"
 
 WORKDIR /
 
