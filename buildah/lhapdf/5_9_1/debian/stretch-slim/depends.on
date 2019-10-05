@@ -1,0 +1,3 @@
+# [repo/]NAME[:TAG=latest]         ROOT IMAGE[:tag=latest]  [VERSION=default]
+picker24/buildbox:debian_stretch     debian:stretch-slim       default
+picker24/runbox:debian_stretch       debian:stretch-slim       default

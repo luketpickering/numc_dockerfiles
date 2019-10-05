@@ -1,0 +1,42 @@
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+
+FROM=$1
+TO=$2
+
+if [ -z $BB_ROOT ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_ROOT/common.funcs
+
+# COPY --from=BUILD /opt/lhapdf /opt/lhapdf
+cat << EOF > /tmp/$$.copy
+#!/bin/bash
+FROM_MP=\$(buildah mount ${FROM})
+buildah copy ${TO} \$FROM_MP/opt/lhapdf /opt/lhapdf
+buildah unmount ${FROM}
+EOF
+
+chmod +x /tmp/$$.copy
+buildah unshare /tmp/$$.copy
+rm /tmp/$$.copy
+
+CONT_PATH=$(get_cont_env ${TO} PATH)
+echo "lhapdf PATH:${CONT_PATH}"
+CONT_LD_LIBRARY_PATH=$(get_cont_env ${TO} LD_LIBRARY_PATH)
+echo "lhapdf LD_LIBRARY_PATH:${CONT_LD_LIBRARY_PATH}"
+
+# ENV LHAPATH "/opt/lhapdf/5.9.1"
+buildah config --env LHAPATH="/opt/lhapdf/5.9.1" ${TO}
+# ENV LHAPDF_INC "${LHAPATH}/include"
+buildah config --env LHAPDF_INC="${LHAPATH}/include" ${TO}
+# ENV LHAPDF_LIB "${LHAPATH}/lib"
+buildah config --env LHAPDF_LIB="${LHAPATH}/lib" ${TO}
+# ENV PATH "${LHAPATH}/bin:${PATH}"
+buildah config --env PATH="${LHAPATH}/bin:${CONT_PATH}" ${TO}
+# ENV LD_LIBRARY_PATH "${LHAPDF_LIB}:${LD_LIBRARY_PATH}"
+buildah config --env LD_LIBRARY_PATH="${LHAPDF_LIB}:${CONT_LD_LIBRARY_PATH}" ${TO}

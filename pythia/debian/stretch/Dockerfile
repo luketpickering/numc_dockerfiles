@@ -20,7 +20,7 @@ FROM picker24/runbox:latest
 COPY --from=BUILD /opt/pythia6 /opt/pythia6
 
 ENV PYTHIA6 /opt/pythia6/6.4.28
-ENV LD_LIBRARY_PATH "${PYTHIA6}/lib:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH "${PYTHIA6}:${LD_LIBRARY_PATH}"
 
 WORKDIR /
 

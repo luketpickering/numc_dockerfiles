@@ -1,0 +1,90 @@
+#!/bin/bash
+
+NAME="lhapdf"
+VERSNAME="5_9_1"
+VERSSTR="5.9.1"
+
+FQCONTSTUB="${BB_REPO}/${NAME}_${VERSE}"
+FQCONTNAME="${FQCONTSTUB}:${TAG}"
+COMPILE_STAGE="${FQCONTSTUB}:build_int"
+
+ROOT_IT=debian:stretch-slim
+
+TAG=$1
+if [ -z $TAG ]; then
+  echo "Error ${0} expected to be passed a tag."
+  exit 1
+fi
+
+if [ -z ${N_CORE} ]; then
+    N_CORE=4
+fi
+
+#If anything fails, we back out
+set -e
+
+if [ -z $BB_ROOT ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_ROOT/common.funcs
+
+if podman image exists ${COMPILE_STAGE}; then
+  BUILD=$(buildah from ${COMPILE_STAGE})
+else
+
+  # FROM picker24/buildbox:debian_stretch AS BUILD
+  BUILD=$(buildah from picker24/buildbox:debian_stretch)
+
+  # RUN mkdir /opt/lhapdf-src
+  buildah run ${BUILD} mkdir -p /opt/lhapdf-src
+
+  # WORKDIR /opt/lhapdf-src
+  buildah config --workingdir /opt/lhapdf-src  ${BUILD}
+
+  # RUN wget --no-check-certificate \
+  #   https://lhapdf.hepforge.org/downloads/?f=lhapdf-${VERSSTR}.tar.gz \
+  #   -O lhapdf-${VERSSTR}.tar.gz
+  buildah run ${BUILD} wget --no-check-certificate \
+                          https://lhapdf.hepforge.org/downloads/?f=lhapdf-${VERSSTR}.tar.gz \
+                          -O lhapdf-${VERSSTR}.tar.gz
+
+  # RUN tar -zxvf lhapdf-${VERSSTR}.tar.gz
+  buildah run ${BUILD} tar -zxvf lhapdf-${VERSSTR}.tar.gz
+  # RUN mkdir /opt/lhapdf-build
+  buildah run ${BUILD} mkdir -p /opt/lhapdf-build
+
+  # WORKDIR /opt/lhapdf-build/
+  buildah config --workingdir /opt/lhapdf-build  ${BUILD}
+
+  # RUN /opt/lhapdf-src/lhapdf-${VERSSTR}/configure \
+  #             --prefix=/opt/lhapdf/${VERSSTR} --disable-old-ccwrap --disable-pyext
+  buildah run ${BUILD} /opt/lhapdf-src/lhapdf-${VERSSTR}/configure \
+                                      --prefix=/opt/lhapdf/${VERSSTR} \
+                                      --disable-old-ccwrap \
+                                      --disable-pyext
+
+  # RUN make install -j ${N_CORE}
+  buildah run ${BUILD} make install -j ${N_CORE}
+
+  buildah commit ${BUILD} ${COMPILE_STAGE}
+
+fi
+
+# FROM picker24/runbox:latest
+BASE=$(buildah from picker24/runbox:debian_stretch)
+
+inject ${BUILD} ${BASE} ${NAME} ${ROOT_IT} ${VERS}
+
+# WORKDIR /
+
+# ENTRYPOINT ["/bin/bash"]
+buildah config --entrypoint /bin/bash ${BASE}
+
+# CMD []
+
+set_psone ${BASE} ${FQCONTSTUB}
+
+echo "Committing..."
+buildah commit ${BASE} ${FQCONTNAME}

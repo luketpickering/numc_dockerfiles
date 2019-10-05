@@ -1,0 +1,105 @@
+#!/bin/bash
+
+function sanitize_inputs {
+    NAME=$1
+    local ROOT_IT=$2
+    VERS=$3
+
+    if [ -z $NAME ]; then
+        echo "Must specify a Name for the container structure."
+        return 1
+    fi
+    if [ -z $ROOT_IT ]; then
+        echo "Must specify a root image name for the container structure."
+        return 2
+    fi
+
+
+    local OLDIFS=${IFS}
+    local IFS=:
+    set -- $ROOT_IT
+    local IFS=${OLDIFS}
+    ROOT_IMAGE=$1
+    ROOT_TAG=$2
+    if [ -z $ROOT_TAG ]; then
+        ROOT_TAG=latest
+    fi
+}
+
+function check_exists {
+
+    if ! sanitize_inputs $1 $2 $3; then
+      return $?
+    fi
+
+    echo "Checking \"$NAME\" (v: $VERS) rooted on: \"$ROOT_IMAGE:$ROOT_TAG\""
+
+    if [ ! -d $BB_ROOT/$NAME/$VERS/$ROOT_IMAGE/$ROOT_TAG ]; then
+        echo "Directory \"$BB_ROOT/$NAME/$VERS/$ROOT_IMAGE/$ROOT_TAG\" doesn't exist."
+        return 3
+    fi
+
+    if [ ! -e $BB_ROOT/$NAME/$VERS/$ROOT_IMAGE/$ROOT_TAG/build.ah ]; then
+        echo "Script \"$BB_ROOT/$NAME/$VERS/$ROOT_IMAGE/$ROOT_TAG/build.ah\" doesn't exist."
+        return 4
+    fi
+
+    if [ ! -x $BB_ROOT/$NAME/$VERS/$ROOT_IMAGE/$ROOT_TAG/build.ah ]; then
+        echo "Script \"$BB_ROOT/$NAME/$VERS/$ROOT_IMAGE/$ROOT_TAG/build.ah\" isn't executable."
+        return 5
+    fi
+
+    return 0
+}
+
+function inject {
+
+    FROM=$1
+    TO=$2
+    if [ -z $FROM ]; then
+    echo "Error: expected a FROM buildah container id."
+    exit 1
+    fi
+
+    if [ -z $TO ]; then
+    echo "Error: expected a TO buildah container id."
+    exit 1
+    fi
+
+    shift; shift
+
+    if ! check_exists $1 $2 $3; then
+      return $?
+    fi
+
+    if [ ! -e $BB_ROOT/$NAME/$VERS/$ROOT_IMAGE/$ROOT_TAG/injectin.to ]; then
+        echo "Script \"$BB_ROOT/$NAME/$VERS/$ROOT_IMAGE/$ROOT_TAG/injectin.to\" doesn't exist."
+        return 3
+    fi
+
+    if [ ! -x $BB_ROOT/$NAME/$VERS/$ROOT_IMAGE/$ROOT_TAG/injectin.to ]; then
+        echo "Script \"$BB_ROOT/$NAME/$VERS/$ROOT_IMAGE/$ROOT_TAG/injectin.to\" isn't executable."
+        return 4
+    fi
+
+    if ! $BB_ROOT/$NAME/$VERS/$ROOT_IMAGE/$ROOT_TAG/injectin.to $FROM $TO; then
+      return 5
+    fi
+
+    return 0
+}
+
+function get_cont_env {
+    FROM=$1
+    ENVNAME=$2
+
+    if buildah run ${1} printenv ${2} &> /dev/null; then
+      buildah run ${1} printenv ${2}
+    fi
+}
+
+function set_psone {
+    FROM=$1
+    STR=$2
+    buildah run ${FROM} sed -i -e "\$a PS1=\"\\\\[\\\\033[01;31m\\\\]${STR}\\\\[\\\\033[00m\\\\]:\\\\[\\\\033[01;34m\\\\]\\\\w\\\\[\\\\033[00m\\\\]# \"" /root/.bashrc
+}

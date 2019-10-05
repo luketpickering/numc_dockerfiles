@@ -7,8 +7,7 @@ FROM picker24/buildbox:latest AS BUILD
 # Pull down and trim the splines
 RUN mkdir -p /opt/genie-splines
 WORKDIR /opt/genie-splines
-RUN wget --no-check-certificate https://scisoft.fnal.gov/scisoft/packages/genie_xsec/v2_12_0/genie_xsec-2.12.0-noarch-DefaultPlusMECWithNC.tar.bz2
-RUN tar -xvf genie_xsec-2.12.0-noarch-DefaultPlusMECWithNC.tar.bz2
+ADD genie_xsec-2.12.0-noarch-DefaultPlusMECWithNC.tar.bz2 /opt/genie-splines/
 
 WORKDIR /opt/genie-splines/genie_xsec/v2_12_0/NULL/DefaultPlusMECWithNC/data
 ADD t2k-nova.gxspl.min.awk /opt/genie-splines/genie_xsec/v2_12_0/NULL/DefaultPlusMECWithNC/data/
@@ -19,7 +18,7 @@ RUN gzip gxspl-t2k-nova.xml
 RUN mkdir -p /var/genie/xsec/DefaultPlusMECWithNC
 RUN mv UserPhysicsOptions.xml \
        EventGeneratorListAssembler.xml \
-       gxspl-FNALsmall.xml \
+       gxspl-t2k-nova.xml.gz \
     /var/genie/xsec/DefaultPlusMECWithNC/
 
 # Pull in dependencies
@@ -27,7 +26,7 @@ RUN mv UserPhysicsOptions.xml \
 COPY --from=ROOT /opt/pythia6 /opt/pythia6
 
 ENV PYTHIA6 "/opt/pythia6/6.4.28"
-ENV LD_LIBRARY_PATH "${PYTHIA6}/lib:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH "${PYTHIA6}:${LD_LIBRARY_PATH}"
 
 COPY --from=ROOT /opt/root /opt/root
 
@@ -89,7 +88,7 @@ FROM picker24/runbox:latest
 COPY --from=ROOT /opt/pythia6 /opt/pythia6
 
 ENV PYTHIA6 "/opt/pythia6/6.4.28"
-ENV LD_LIBRARY_PATH "${PYTHIA6}/lib:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH "${PYTHIA6}:${LD_LIBRARY_PATH}"
 
 COPY --from=ROOT /opt/root /opt/root
 
