@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 TAG=$1
 if [ -z $TAG ]; then
   echo "Error ${0} expected to be passed a tag."
@@ -135,13 +137,14 @@ else
 
 cat << EOF > /tmp/$$.genie.ln
 #!/bin/bash
-CONT_MP=\$(buildah mount ${CONT})
-cd $CONT_MP
-for i in ${GENIE}/include/GENIE/*; do ln -s ${i}; done
+CONT_MP=\$(buildah mount ${BUILD})
+cd \${CONT_MP}${GENIE}/src
+ln -s -t . ../include/GENIE/*/
 cd -
-buildah unmount ${CONT} &> /dev/null
+buildah unmount ${BUILD} &> /dev/null
 EOF
-  buildah unshare ${BUILD} /tmp/$$.genie.ln
+  chmod +x /tmp/$$.genie.ln
+  buildah unshare /tmp/$$.genie.ln
   rm /tmp/$$.genie.ln
 
   buildah commit ${BUILD} ${COMPILE_STAGE}

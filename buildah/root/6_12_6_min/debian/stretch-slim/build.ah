@@ -9,7 +9,7 @@ if [ -z $TAG ]; then
 fi
 
 NAME="root"
-VERSNAME="6_12_6"
+VERSNAME="6_12_6_min"
 VERSSTR="v6-12-06"
 
 FQCONTSTUB="${BB_REPO_SL}${NAME}_${VERSNAME}"
