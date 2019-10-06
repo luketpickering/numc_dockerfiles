@@ -1,1 +1,87 @@
 #!/bin/bash
+
+TAG=$1
+if [ -z $TAG ]; then
+  echo "Error ${0} expected to be passed a tag."
+  exit 1
+fi
+
+NAME="pythia"
+VERSNAME="6_4_28"
+VERSSTR="6.4.28"
+
+FQCONTSTUB="${BB_REPO_SL}${NAME}_${VERSNAME}"
+FQCONTNAME="${FQCONTSTUB}:${TAG}"
+COMPILE_STAGE="${FQCONTSTUB}:build_int"
+
+if [ -z ${N_CORE} ]; then
+    N_CORE=4
+fi
+
+#If anything fails, we back out
+set -e
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/common.funcs
+
+if podman image exists ${COMPILE_STAGE}; then
+  BUILD=$(buildah from ${COMPILE_STAGE})
+else
+
+  # FROM picker24/buildbox:debian_stretch AS BUILD
+  BUILD=$(buildah from $(bb_get_buildbox ${ROOT_IT}))
+
+  # RUN mkdir -p /opt/pythia6-src
+  buildah run ${BUILD} mkdir -p /opt/${NAME}-src
+  # WORKDIR /opt/pythia6-src/
+  buildah config --workingdir /opt/${NAME}-src ${BUILD}
+  # RUN wget --no-check-certificate http://root.cern.ch/download/pythia6.tar.gz
+  buildah run ${BUILD} wget --no-check-certificate http://root.cern.ch/download/pythia6.tar.gz
+  # RUN wget --no-check-certificate http://www.hepforge.org/archive/pythia6/pythia-6.4.28.f.gz
+  buildah run ${BUILD} wget --no-check-certificate http://www.hepforge.org/archive/pythia6/pythia-6.4.28.f.gz
+  # RUN gunzip pythia-6.4.28.f.gz
+  buildah run ${BUILD} gunzip pythia-6.4.28.f.gz
+  # RUN tar xfvz pythia6.tar.gz
+  buildah run ${BUILD} tar xfvz pythia6.tar.gz
+  # RUN mv pythia-6.4.28.f pythia6/pythia6428.f
+  buildah run ${BUILD} mv pythia-6.4.28.f pythia6/pythia6428.f
+  # RUN rm -rf pythia6/pythia6416.f
+  buildah run ${BUILD} rm pythia6/pythia6416.f
+  # WORKDIR /opt/pythia6-src/pythia6
+  buildah config --workingdir /opt/${NAME}-src/pythia6 ${BUILD}
+  # RUN ./makePythia6.linuxx8664
+  buildah run ${BUILD} bash makePythia6.linuxx8664
+  # RUN mkdir -p /opt/pythia6/6.4.28
+  buildah run ${BUILD} mkdir -p /opt/${NAME}/${VERSSTR}
+  # RUN mv libPythia6.so /opt/pythia6/6.4.28/libPythia6.so.6.4.28
+  buildah run ${BUILD} mv libPythia6.so /opt/${NAME}/${VERSSTR}/libPythia6.so.${VERSSTR}
+  # RUN ln -s /opt/pythia6/6.4.28/libPythia6.so.6.4.28 /opt/pythia6/6.4.28/libPythia6.so
+  buildah run ${BUILD} ln -s /opt/${NAME}/${VERSSTR}/libPythia6.so.${VERSSTR} \
+                             /opt/${NAME}/${VERSSTR}/libPythia6.so
+
+  buildah commit ${BUILD} ${COMPILE_STAGE}
+
+fi
+
+# FROM picker24/runbox:latest
+BASE=$(buildah from $(bb_get_runbox ${ROOT_IT}))
+
+bb_inject ${BUILD} ${BASE} ${NAME} ${ROOT_IT} ${VERSNAME}
+
+# WORKDIR /
+
+# ENTRYPOINT ["/bin/bash"]
+buildah config --entrypoint /bin/bash ${BASE}
+
+# CMD []
+
+bb_set_psone ${BASE} ${FQCONTSTUB}
+
+echo "Committing..."
+buildah commit ${BASE} ${FQCONTNAME}
+
+buildah rm ${BUILD} ${BASE}

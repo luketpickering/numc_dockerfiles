@@ -1,1 +1,168 @@
 #!/bin/bash
+
+TAG=$1
+if [ -z $TAG ]; then
+  echo "Error ${0} expected to be passed a tag."
+  exit 1
+fi
+
+NAME="genie"
+VERSNAME="2_12_2"
+VERSSTR="R-2_12_2"
+
+FQCONTSTUB="${BB_REPO_SL}${NAME}_${VERSNAME}"
+FQCONTNAME="${FQCONTSTUB}:${TAG}"
+COMPILE_STAGE="${FQCONTSTUB}:build_int"
+
+if [ -z ${N_CORE} ]; then
+    N_CORE=4
+fi
+
+#If anything fails, we back out
+set -e
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/common.funcs
+
+if podman image exists ${COMPILE_STAGE}; then
+  BUILD=$(buildah from ${COMPILE_STAGE})
+else
+
+  # FROM picker24/buildbox:debian_stretch AS BUILD
+  BUILD=$(buildah from $(bb_get_buildbox ${ROOT_IT}))
+
+  # Pull down and minify the spline file if you haven't already
+  if [ ! -e ${BB_PKG_DIR}/gxspl-t2k-nova.xml.gz ]; then
+    cd ${BB_PKG_DIR}
+    if [ ! -e genie_xsec-2.12.0-noarch-DefaultPlusMECWithNC.tar.bz2 ]; then
+      wget https://scisoft.fnal.gov/scisoft/packages/genie_xsec/v2_12_0/genie_xsec-2.12.0-noarch-DefaultPlusMECWithNC.tar.bz2 -O genie_xsec-2.12.0-noarch-DefaultPlusMECWithNC.tar.bz2
+    fi
+    tar xvf genie_xsec-2.12.0-noarch-DefaultPlusMECWithNC.tar.bz2
+    mv genie_xsec/v2_12_0/NULL/DefaultPlusMECWithNC/data/{gxspl-FNALsmall.xml,UserPhysicsOptions.xml,EventGeneratorListAssembler.xml} ./
+    rm -r genie_xsec
+    tar -xvf genie_xsec-2.12.0-noarch-DefaultPlusMECWithNC.tar.bz2
+    awk -f t2k-nova.gxspl.min.awk gxspl-FNALsmall.xml > gxspl-t2k-nova.xml
+    gzip gxspl-t2k-nova.xml
+    cd -
+  fi
+
+  # RUN mkdir -p /var/genie/xsec/DefaultPlusMECWithNC
+  buildah run ${BUILD}  mkdir -p /var/genie/xsec/DefaultPlusMECWithNC
+  # RUN mv UserPhysicsOptions.xml \
+  #        EventGeneratorListAssembler.xml \
+  #        gxspl-t2k-nova.xml.gz \
+  #     /var/genie/xsec/DefaultPlusMECWithNC/
+  bb_add ${BUILD} UserPhysicsOptions.xml /var/genie/xsec/DefaultPlusMECWithNC/
+  bb_add ${BUILD} EventGeneratorListAssembler.xml \
+                  /var/genie/xsec/DefaultPlusMECWithNC/
+  bb_add ${BUILD} gxspl-t2k-nova.xml.gz /var/genie/xsec/DefaultPlusMECWithNC/
+
+  LHAPDF_CONT=$(buildah from $(bb_get_reponame lhapdf_5_9_1 ${ROOT_IT}))
+  bb_inject ${LHAPDF_CONT} ${BUILD} lhapdf ${ROOT_IT} 5_9_1
+  buildah rm ${LHAPDF_CONT}
+
+  ROOT_CONT=$(buildah from $(bb_get_reponame root_6_12_6 ${ROOT_IT}))
+  bb_inject ${ROOT_CONT} ${BUILD} root ${ROOT_IT} 6_12_6
+  buildah rm ${ROOT_CONT}
+
+  # ENV GENIE "/opt/GENIE-src/Generator"
+  buildah config --env GENIE=/opt/GENIE-src/Generator ${BUILD}
+
+  # # build
+  # RUN mkdir /opt/GENIE-src
+  buildah run ${BUILD} mkdir -p /opt/GENIE-src
+  # WORKDIR /opt/GENIE-src
+  buildah config --workingdir /opt/GENIE-src ${BUILD}
+  # RUN git clone -c http.sslVerify=false \
+  #               https://github.com/GENIE-MC/Generator.git
+  buildah run ${BUILD} git clone -c http.sslVerify=false \
+                          https://github.com/GENIE-MC/Generator.git
+  # WORKDIR /opt/GENIE-src/Generator
+  buildah config --workingdir /opt/GENIE-src/Generator ${BUILD}
+  # RUN git checkout R-2_12_2
+  buildah run ${BUILD} git checkout ${VERSSTR}
+  # RUN ./configure --prefix=/opt/genie/2_12_2 --enable-rwght
+  buildah run ${BUILD} ./configure --prefix=/opt/genie/${VERSSTR} --enable-rwght
+  # RUN make 
+  buildah run ${BUILD} make  
+  # RUN mkdir -p /opt/genie/2_12_2
+  buildah run ${BUILD} mkdir -p /opt/genie/${VERSSTR}
+  # RUN make install
+  buildah run ${BUILD} make install 
+
+  # RUN cp /opt/GENIE-src/Generator/data/evgen/pdfs/GRV98lo_patched.LHgrid \
+  #        ${LHAPATH}/GRV98lo_patched.LHgrid
+  buildah run ${BUILD} cp \
+    /opt/GENIE-src/Generator/data/evgen/pdfs/GRV98lo_patched.LHgrid \
+    ${LHAPATH}/GRV98lo_patched.LHgrid
+
+  # ENV GENIE "/opt/genie/2_12_2"
+  buildah config --env GENIE=/opt/genie/${VERSSTR} ${BUILD}
+
+  LHAPATH=$(bb_get_cont_env ${BUILD} LHAPATH)
+  GENIE=/opt/genie/${VERSSTR}
+
+
+  # #GENIE install doesn't fancy installing this header, lets help
+  # RUN cp -r /opt/GENIE-src/Generator/src/Interfaces \
+  #           ${GENIE}/include/GENIE/
+  buildah run ${BUILD} cp -r /opt/GENIE-src/Generator/src/Interfaces \
+             ${GENIE}/include/GENIE/
+  # RUN cp /opt/GENIE-src/Generator/VERSION ${GENIE}/
+  buildah run ${BUILD} cp -r /opt/GENIE-src/Generator/src/Interfaces \
+             ${GENIE}/
+  # RUN cp -r /opt/GENIE-src/Generator/config ${GENIE}/
+  buildah run ${BUILD} cp -r /opt/GENIE-src/Generator/config \
+             ${GENIE}/
+  # RUN mkdir -p ${GENIE}/data/
+  buildah run ${BUILD} mkdir -p ${GENIE}/data/
+  # RUN cp -r /opt/GENIE-src/Generator/data/evgen ${GENIE}/data/
+  buildah run ${BUILD} cp -r /opt/GENIE-src/Generator/data/evgen \
+                            ${GENIE}/data/
+  # #copy in a config file that genie-config expects
+  # RUN mkdir -p ${GENIE}/src/make/
+  buildah run ${BUILD} mkdir -p ${GENIE}/src/make/
+  # RUN cp /opt/GENIE-src/Generator/src/make/Make.config_no_paths ${GENIE}/src/make/
+  buildah run ${BUILD} cp /opt/GENIE-src/Generator/src/make/Make.config_no_paths ${GENIE}/src/make/
+  # #make symlinks for things that include ${GENIE}/src
+  # WORKDIR ${GENIE}/src
+  buildah config --workingdir ${GENIE}/src ${BUILD}
+  # RUN for i in ${GENIE}/include/GENIE/*; do ln -s ${i}; done
+
+cat << EOF > /tmp/$$.genie.ln
+#!/bin/bash
+CONT_MP=\$(buildah mount ${CONT})
+cd $CONT_MP
+for i in ${GENIE}/include/GENIE/*; do ln -s ${i}; done
+cd -
+buildah unmount ${CONT} &> /dev/null
+EOF
+  buildah unshare ${BUILD} /tmp/$$.genie.ln
+  rm /tmp/$$.genie.ln
+
+  buildah commit ${BUILD} ${COMPILE_STAGE}
+
+fi
+
+# FROM picker24/runbox:latest
+BASE=$(buildah from $(bb_get_runbox ${ROOT_IT}))
+
+bb_inject ${BUILD} ${BASE} ${NAME} ${ROOT_IT} ${VERSNAME}
+
+# WORKDIR /
+
+# ENTRYPOINT ["/bin/bash"]
+buildah config --entrypoint /bin/bash ${BASE}
+
+# CMD []
+
+bb_set_psone ${BASE} ${FQCONTSTUB}
+
+echo "Committing..."
+buildah commit ${BASE} ${FQCONTNAME}
+
+buildah rm ${BUILD} ${BASE}

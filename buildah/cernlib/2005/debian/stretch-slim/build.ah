@@ -1,1 +1,81 @@
 #!/bin/bash
+
+TAG=$1
+if [ -z $TAG ]; then
+  echo "Error ${0} expected to be passed a tag."
+  exit 1
+fi
+
+NAME="cernlib"
+VERSNAME="2005"
+VERSSTR="2005"
+
+FQCONTSTUB="${BB_REPO_SL}${NAME}_${VERSNAME}"
+FQCONTNAME="${FQCONTSTUB}:${TAG}"
+COMPILE_STAGE="${FQCONTSTUB}:build_int"
+
+if [ -z ${N_CORE} ]; then
+    N_CORE=4
+fi
+
+#If anything fails, we back out
+set -e
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/common.funcs
+
+if podman image exists ${COMPILE_STAGE}; then
+  BUILD=$(buildah from ${COMPILE_STAGE})
+else
+
+  # FROM picker24/buildbox:debian_stretch AS BUILD
+  BUILD=$(buildah from $(bb_get_buildbox ${ROOT_IT}))
+
+  # RUN ln -s /usr/bin/make /usr/bin/gmake
+  buildah run ${BUILD} ln -s /usr/bin/make /usr/bin/gmake
+
+  # RUN mkdir -p /opt/cernlib-src /opt/cernlib
+  buildah run ${BUILD} mkdir -p /opt/${NAME}-src
+  # WORKDIR /opt/cernlib-src
+  buildah config --workingdir /opt/${NAME}-src ${BUILD}
+  # RUN git clone -c http.sslVerify=false \
+  #               https://github.com/luketpickering/cernlibgcc5-.git
+  buildah run ${BUILD} git clone -c http.sslVerify=false \
+                https://github.com/luketpickering/cernlibgcc5-.git
+  # WORKDIR /opt/cernlib-src/cernlibgcc5-
+  buildah config --workingdir /opt/${NAME}-src/cernlibgcc5- ${BUILD}
+  # RUN ./build_cernlib.sh
+  buildah run ${BUILD} ./build_cernlib.sh
+  # RUN mkdir -p /opt/cernlib/2005/
+  buildah run ${BUILD} mkdir -p /opt/${NAME}/${VERSNAME}
+  # RUN mv /opt/cernlib-src/cernlibgcc5-/cernlib_build/2005/bin /opt/cernlib/2005/
+  buildah run ${BUILD} mv \
+      /opt/${NAME}-src/cernlibgcc5-/cernlib_build/2005/{bin,include,lib} \
+      /opt/${NAME}/${VERSNAME}
+
+  buildah commit ${BUILD} ${COMPILE_STAGE}
+
+fi
+
+# FROM picker24/runbox:latest
+BASE=$(buildah from $(bb_get_runbox ${ROOT_IT}))
+
+bb_inject ${BUILD} ${BASE} ${NAME} ${ROOT_IT} ${VERSNAME}
+
+# WORKDIR /
+
+# ENTRYPOINT ["/bin/bash"]
+buildah config --entrypoint /bin/bash ${BASE}
+
+# CMD []
+
+bb_set_psone ${BASE} ${FQCONTSTUB}
+
+echo "Committing..."
+buildah commit ${BASE} ${FQCONTNAME}
+
+buildah rm ${BUILD} ${BASE}

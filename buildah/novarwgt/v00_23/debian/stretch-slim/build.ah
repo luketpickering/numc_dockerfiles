@@ -1,14 +1,16 @@
 #!/bin/bash
 
+set +x
+
 TAG=$1
 if [ -z $TAG ]; then
   echo "Error ${0} expected to be passed a tag."
   exit 1
 fi
 
-NAME="lhapdf"
-VERSNAME="5_9_1"
-VERSSTR="5.9.1"
+NAME="novarwgt"
+VERSNAME="v00_23"
+VERSSTR="v00.23"
 
 FQCONTSTUB="${BB_REPO_SL}${NAME}_${VERSNAME}"
 FQCONTNAME="${FQCONTSTUB}:${TAG}"
@@ -32,38 +34,32 @@ if podman image exists ${COMPILE_STAGE}; then
   BUILD=$(buildah from ${COMPILE_STAGE})
 else
 
-  # FROM picker24/buildbox:debian_stretch AS BUILD
   BUILD=$(buildah from $(bb_get_buildbox ${ROOT_IT}))
 
-  # RUN mkdir /opt/lhapdf-src
+  GENIE_CONT=$(buildah from $(bb_get_reponame genie_2_12_2 ${ROOT_IT}))
+  bb_inject ${GENIE_CONT} ${BUILD} genie ${ROOT_IT} 2_12_2
+  buildah rm ${GENIE_CONT}
+
   buildah run ${BUILD} mkdir -p /opt/${NAME}-src
 
-  # WORKDIR /opt/lhapdf-src
+  bb_add ${BUILD} NOvARwgt /opt/${NAME}-src
+
   buildah config --workingdir /opt/${NAME}-src  ${BUILD}
 
-  # RUN wget --no-check-certificate \
-  #   https://lhapdf.hepforge.org/downloads/?f=lhapdf-${VERSSTR}.tar.gz \
-  #   -O lhapdf-${VERSSTR}.tar.gz
-  buildah run ${BUILD} wget --no-check-certificate \
-                          https://lhapdf.hepforge.org/downloads/?f=lhapdf-${VERSSTR}.tar.gz \
-                          -O lhapdf-${VERSSTR}.tar.gz
+  buildah run ${BUILD} git checkout ${VERSSTR}
 
-  # RUN tar -zxvf lhapdf-${VERSSTR}.tar.gz
-  buildah run ${BUILD} tar -zxvf lhapdf-${VERSSTR}.tar.gz
-  # RUN mkdir /opt/lhapdf-build
+  buildah run ${BUILD} sed -i "s/cmake_minimum_required(VERSION 3.10)/cmake_minimum_required(VERSION 3.7)/g" CMakeLists.txt
+
   buildah run ${BUILD} mkdir -p /opt/${NAME}-build
 
-  # WORKDIR /opt/lhapdf-build/
   buildah config --workingdir /opt/${NAME}-build  ${BUILD}
 
-  # RUN /opt/lhapdf-src/lhapdf-${VERSSTR}/configure \
-  #             --prefix=/opt/lhapdf/${VERSSTR} --disable-old-ccwrap --disable-pyext
-  buildah run ${BUILD} /opt/${NAME}-src/lhapdf-${VERSSTR}/configure \
-                                      --prefix=/opt/lhapdf/${VERSSTR} \
-                                      --disable-old-ccwrap \
-                                      --disable-pyext
+  buildah run ${BUILD} cmake /opt/${NAME}-src \
+          -DCMAKE_INSTALL_PREFIX=/opt/${NAME}/${VERSSTR} \
+          -DNOVARWGT_USE_NUSIMDATA=OFF -DNOVARWGT_USE_CETLIB=OFF \
+          -DNOVARWGT_USE_GENIE=ON -DNOVARWGT_INSTALL_SOURCE=OFF \
+          -DCMAKE_BUILD_TYPE=RELEASE
 
-  # RUN make install -j ${N_CORE}
   buildah run ${BUILD} make install -j ${N_CORE}
 
   buildah commit ${BUILD} ${COMPILE_STAGE}

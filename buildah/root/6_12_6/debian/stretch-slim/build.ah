@@ -1,1 +1,134 @@
 #!/bin/bash
+
+set +x
+
+TAG=$1
+if [ -z $TAG ]; then
+  echo "Error ${0} expected to be passed a tag."
+  exit 1
+fi
+
+NAME="root"
+VERSNAME="6_12_6"
+VERSSTR="v6-12-06"
+
+FQCONTSTUB="${BB_REPO_SL}${NAME}_${VERSNAME}"
+FQCONTNAME="${FQCONTSTUB}:${TAG}"
+COMPILE_STAGE="${FQCONTSTUB}:build_int"
+SRC_STAGE="${FQCONTSTUB}:got_src"
+
+if [ -z ${N_CORE} ]; then
+    N_CORE=8
+fi
+
+#If anything fails, we back out
+set -e
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/common.funcs
+
+if podman image exists ${SRC_STAGE}; then
+  BUILD=$(buildah from ${SRC_STAGE})
+else
+
+  # FROM picker24/buildbox:debian_stretch AS BUILD
+  BUILD=$(buildah from $(bb_get_buildbox ${ROOT_IT}))
+  
+  PYTHIA_CONT=$(buildah from ${BB_REPO_SL}pythia_6_4_28:debian_stretch)
+  bb_inject ${PYTHIA_CONT} ${BUILD} pythia ${ROOT_IT} 6_4_28
+  buildah rm ${PYTHIA_CONT}
+
+  # RUN mkdir -p /opt/root-src
+  buildah run ${BUILD} mkdir -p /opt/${NAME}-src
+  # WORKDIR /opt/root-src/
+  buildah config --workingdir /opt/${NAME}-src ${BUILD}
+
+  # RUN mkdir -p /opt/root-src
+  buildah run ${BUILD} mkdir -p /opt/${NAME}-src
+  # RUN mkdir -p /opt/root-build
+  buildah run ${BUILD} mkdir -p /opt/${NAME}-build
+  # RUN git clone -c http.sslVerify=false \
+  #               https://github.com/root-project/root.git /opt/root-src
+  buildah run ${BUILD} git clone -c http.sslVerify=false \
+                          https://github.com/root-project/root.git /opt/root-src
+
+  buildah commit ${BUILD} ${SRC_STAGE}
+
+fi
+
+if podman image exists ${COMPILE_STAGE}; then
+  BUILD=$(buildah from ${COMPILE_STAGE})
+else
+
+  # WORKDIR /opt/root-src
+  buildah config --workingdir /opt/${NAME}-src ${BUILD}
+  # RUN git checkout tags/v6-12-06
+  buildah run ${BUILD} git checkout tags/${VERSSTR}
+  # WORKDIR /opt/root-build
+  buildah config --workingdir /opt/${NAME}-build ${BUILD}
+  # ENV USE_PARALLEL_MINUIT2=0
+  buildah config --env USE_PARALLEL_MINUIT2=0 ${BUILD}
+  # RUN if [ "${ISMINIMAL}" = "ON" ]; then \
+  #       cmake /opt/root-src \
+  #         -Dminuit2=ON \
+  #         -Dtmva=OFF -Drootfit=OFF \
+  #         -Dx11=$OFF -Dxft=$OFF -Dopengl=$OFF \
+  #         -Dminimal=ON \
+  #         -Dmathmore=ON \
+  #         -Dpythia6=ON -DPYTHIA6_LIBRARY=${PYTHIA6}/libPythia6.so.6.4.28 \
+  #         -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/opt/root/v6-12-06 ; \
+  #     else \
+  #       cmake /opt/root-src \
+  #         -Dminuit2=ON \
+  #         -Dmathmore=ON \
+  #         -Dpythia6=ON -DPYTHIA6_LIBRARY=${PYTHIA6}/libPythia6.so.6.4.28 \
+  #         -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/opt/root/v6-12-06 ; \
+  #     fi
+
+  PYTHIA6=$(bb_get_cont_env ${BUILD} PYTHIA6)
+
+  buildah run ${BUILD} cmake /opt/root-src \
+      -Dminuit2=ON \
+      -Dmathmore=ON \
+      -Dpythia6=ON -DPYTHIA6_LIBRARY=${PYTHIA6}/libPythia6.so.6.4.28 \
+      -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/opt/${NAME}/${VERSSTR}
+  # RUN make -j ${N_CORE}
+  buildah run ${BUILD} make -j ${N_CORE}
+  # RUN make install
+  buildah run ${BUILD} make install
+  # WORKDIR /opt/root/v6-12-06/bin
+  buildah config --workingdir /opt/${NAME}/${VERSSTR}/bin ${BUILD}
+  # # Add a symlink as the minimal install doesn't include the splash screen wrapper.
+  buildah run ${BUILD} ln -sf root.exe root &> /dev/null
+
+  # # Tidy up some stuff ROOT installs needlessly
+  # RUN rm -rf /opt/root/v6-12-06/test /opt/root/v6-12-06/tutorials /opt/root/v6-12-06/README /opt/root/v6-12-06/macros
+  buildah run ${BUILD} rm -rf \
+           /opt/${NAME}/${VERSSTR}/{test,tutorials,README,macros}
+
+  buildah commit ${BUILD} ${COMPILE_STAGE}
+
+fi
+
+# FROM picker24/runbox:latest
+BASE=$(buildah from $(bb_get_runbox ${ROOT_IT}))
+
+bb_inject ${BUILD} ${BASE} ${NAME} ${ROOT_IT} ${VERSNAME}
+
+# WORKDIR /
+
+# ENTRYPOINT ["/bin/bash"]
+buildah config --entrypoint /bin/bash ${BASE}
+
+# CMD []
+
+bb_set_psone ${BASE} ${FQCONTSTUB}
+
+echo "Committing..."
+buildah commit ${BASE} ${FQCONTNAME}
+
+buildah rm ${BUILD} ${BASE}

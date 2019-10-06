@@ -25,4 +25,4 @@ buildah run ${BASE} apt install --no-install-recommends -y \
 
 buildah config --entrypoint /bin/bash ${BASE}
 
-buildah commit ${BASE} picker24/buildbox:${TAG}
+buildah commit ${BASE} ${BB_REPO_SL}buildbox:${TAG}

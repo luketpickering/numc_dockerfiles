@@ -1,1 +1,32 @@
 #!/bin/bash
+
+#If anything fails, we back out
+set -e
+
+FROM=$1
+TO=$2
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/common.funcs
+
+# COPY --from=BUILD /opt/cernlib /opt/cernlib
+bb_copy_from_to ${FROM} ${TO} /opt/cernlib /opt/cernlib
+
+CONT_PATH=$(bb_get_cont_env ${TO} PATH)
+
+CERN="/opt/cernlib"
+CERN_LEVEL="2005"
+CERN_ROOT="${CERN}/${CERN_LEVEL}"
+
+# ENV CERN /opt/cernlib
+buildah config --env CERN="${CERN}" ${TO}
+# ENV CERN_LEVEL 2005
+buildah config --env CERN_LEVEL="${CERN_LEVEL}" ${TO}
+# ENV CERN_ROOT "${CERN}/${CERN_LEVEL}"
+buildah config --env CERN_ROOT="${CERN_ROOT}" ${TO}
+# ENV PATH "${CERN_ROOT}/bin:${PATH}"
+buildah config --env PATH="${CERN_ROOT}/bin:${CONT_PATH}" ${TO}
