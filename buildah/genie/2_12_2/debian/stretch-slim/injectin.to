@@ -11,35 +11,21 @@ if [ -z $BB_SCRIPT_DIR ]; then
   exit 1
 fi
 
-source $BB_SCRIPT_DIR/common.funcs
+source $BB_SCRIPT_DIR/buildah.funcs
 
-# inject cernlib
-bb_inject ${FROM} ${TO} lhapdf ${ROOT_IT} 5_9_1
+bb_mv_build_target ${FROM} ${TO} lhapdf 5.9.1
+bb_mv_build_target ${FROM} ${TO} root v6-12-06_min
 
-# inject root
-bb_inject ${FROM} ${TO} root ${ROOT_IT} 6_12_6
+bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME} /opt/${BB_INJ_NAME}
+bb_cont_to_cont_copy ${FROM} ${TO} /var/${BB_INJ_NAME} /var/${BB_INJ_NAME}
 
-# COPY --from=BUILD /opt/genie /opt/genie
-bb_copy_from_to ${FROM} ${TO} /opt/genie /opt/genie
-bb_copy_from_to ${FROM} ${TO} /var/genie /var/genie
+GENIE="/opt/${BB_INJ_NAME}/${BB_INJ_VERS}"
+bb_cont_set_env ${TO} GENIE ${GENIE}
+bb_add_to_path_env ${TO} PATH ${GENIE}/bin
+bb_add_to_path_env ${TO} LD_LIBRARY_PATH ${GENIE}/lib
+bb_add_to_path_env ${TO} ROOT_INCLUDE_PATH ${GENIE}/include/GENIE
+bb_add_to_path_env ${TO} GXMLPATH /var/${BB_INJ_NAME}/xsec/DefaultPlusMECWithNC
 
-CONT_LD_LIBRARY_PATH=$(bb_get_cont_env ${TO} LD_LIBRARY_PATH)
-CONT_PATH=$(bb_get_cont_env ${TO} PATH)
-CONT_ROOT_INCLUDE_PATH=$(bb_get_cont_env ${TO} ROOT_INCLUDE_PATH)
-CONT_GXMLPATH=$(bb_get_cont_env ${TO} GXMLPATH)
-
-# ENV GENIE "/opt/genie/2_12_2"
-buildah config --env GENIE="/opt/genie/R-2_12_2" ${TO}
-# ENV PATH "${GENIE}/bin:${PATH}"
-buildah config --env PATH="/opt/genie/R-2_12_2/bin:${CONT_PATH}" ${TO}
-# ENV LD_LIBRARY_PATH "${GENIE}/lib:${LD_LIBRARY_PATH}"
-buildah config --env LD_LIBRARY_PATH="/opt/genie/R-2_12_2/lib:${CONT_LD_LIBRARY_PATH}" ${TO}
-# ENV ROOT_INCLUDE_PATH "${GENIE}/include/GENIE:${ROOT_INCLUDE_PATH}"
-buildah config --env ROOT_INCLUDE_PATH="/opt/genie/R-2_12_2/include/GENIE:${CONT_ROOT_INCLUDE_PATH}" ${TO}
-
-# ENV GENIE_XSEC_DIR "/var/genie/xsec/DefaultPlusMECWithNC"
-buildah config --env GENIE_XSEC_DIR="/var/genie/xsec/DefaultPlusMECWithNC" ${TO}
-# ENV GENIE_XSEC_FILE "${GENIE_XSEC_DIR}/gxspl-t2k-nova.xml.gz"
-buildah config --env GENIE_XSEC_FILE="/var/genie/xsec/DefaultPlusMECWithNC/gxspl-t2k-nova.xml.gz" ${TO}
-# ENV GXMLPATH "/var/genie/xsec/DefaultPlusMECWithNC:${CONT_GXMLPATH}"
-buildah config --env GXMLPATH="/var/genie/xsec/DefaultPlusMECWithNC:${CONT_GXMLPATH}" ${TO}
+GENIE_XSEC_DIR="/var/genie/xsec/DefaultPlusMECWithNC"
+bb_cont_set_env ${TO} GENIE_XSEC_DIR ${GENIE_XSEC_DIR}
+bb_cont_set_env ${TO} GENIE_XSEC_FILE "${GENIE_XSEC_DIR}/gxspl-t2k-nova.xml.gz"

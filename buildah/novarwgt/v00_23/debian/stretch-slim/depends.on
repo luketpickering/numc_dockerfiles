@@ -1,2 +1,0 @@
-# [repo/]NAME[:TAG=latest]         ROOT IMAGE[:tag=latest]  [VERSION=default]
-genie:debian_stretch-slim             debian:stretch-slim         2_12_2

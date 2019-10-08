@@ -21,4 +21,4 @@ buildah run ${BASE} apt install --no-install-recommends -y \
 
 buildah config --entrypoint /bin/bash ${BASE}
 
-buildah commit ${BASE} ${BB_REPO_SL}runbox:${TAG}
+bb_commit ${BASE} ${BB_REPO_SL}runbox:${TAG}

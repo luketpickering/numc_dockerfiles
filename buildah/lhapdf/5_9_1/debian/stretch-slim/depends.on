@@ -1,3 +1,0 @@
-# NAME[:TAG=latest]         ROOT IMAGE[:tag=latest]  [VERSION=default]
-buildbox:debian_stretch-slim     debian:stretch-slim       default
-runbox:debian_stretch-slim       debian:stretch-slim       default

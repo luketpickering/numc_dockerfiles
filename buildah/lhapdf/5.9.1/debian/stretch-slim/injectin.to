@@ -1,0 +1,24 @@
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+
+FROM=$1
+TO=$2
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/buildah.funcs
+
+bb_cont_to_cont_copy ${FROM} ${TO} /opt/lhapdf /opt/lhapdf
+
+LHAPATH=/opt/${BB_INJ_NAME}/${BB_INJ_VERS}
+
+bb_cont_set_env ${TO} LHAPATH ${LHAPATH}
+bb_add_to_path_env ${TO} PATH ${LHAPATH}/bin
+bb_add_to_path_env ${TO} LD_LIBRARY_PATH ${LHAPATH}/lib
+bb_cont_set_env ${TO} LHAPDF_INC ${LHAPATH}/include
+bb_cont_set_env ${TO} LHAPDF_LIB ${LHAPATH}/lib

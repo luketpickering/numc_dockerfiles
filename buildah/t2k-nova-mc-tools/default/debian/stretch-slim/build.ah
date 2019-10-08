@@ -1,0 +1,84 @@
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+source $BB_SCRIPT_DIR/buildah.funcs
+COMPILE_STAGE_NAME="${BB_PKG_IMAGE_FQNAME}_build"
+NAME=${BB_PKG_NAME}
+
+if [ -z ${N_CORE} ]; then
+    N_CORE=4
+fi
+
+if ! podman image exists ${COMPILE_STAGE_NAME}; then
+
+  BUILD=$(bb_from_buildbox)
+
+  bb_inject t2kreweight v1r27p3 ${BUILD}
+  bb_inject novarwgt v00.23 ${BUILD}
+
+  bb_cont_mkdir_cd ${BUILD} /opt/nuisance-src
+
+  buildah run ${BUILD} git clone -c http.sslVerify=false \
+              https://github.com/NUISANCEMC/nuisance.git
+
+  bb_cont_mkdir_cd ${BUILD} /opt/nuisance-build
+  buildah run ${BUILD} cmake /opt/nuisance-src/nuisance \
+            -DCMAKE_INSTALL_PREFIX=/opt/nuisance \
+            -DUSE_GENIE=ON -DUSE_NEUT=ON -DUSE_T2K=ON -DUSE_NIWG=ON \
+            -DCMAKE_CXX_STANDARD=14 \
+            -DUSE_NOvARwgt=ON \
+            -DCMAKE_BUILD_TYPE=RELEASE
+  buildah run ${BUILD} -j ${N_CORE}
+  buildah run ${BUILD} install
+
+  bb_cont_cp ${BUILD} -r /opt/nuisance-src/nuisance/data \
+            /opt/nuisance-src/nuisance/parameters \
+            /opt/nuisance/
+
+fi
+
+BASE=$(bb_from_runbox_min)
+
+bb_consume_target ${NAME} ${BB_PKG_VERS} \
+  $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
+
+
+bb_cont_set_env ${BASE} NOVASOUP "1000010010[0.10748284],1000060120[0.66656314],1000080160[0.02987494],1000070140[0.00026273],1000160320[0.00095980],1000170350[0.16110219],1000220480[0.03227276],1000501190[0.00119243],1000200400[0.00026317],1000110230[0.00002598]"
+bb_cont_set_env ${BASE} CHTARGET "1000060120[.923076],1000010010[.076924]"
+bb_cont_set_env ${BASE} H2OTARGET "1000080160[.888888],1000010010[.111112]"
+
+FLUXES="/var/t2k-nova/fluxes"
+bb_cont_set_env ${BASE} FLUXES "${FLUXES}"
+bb_cont_set_env ${BASE} NOVANDFLUX_NUMODE_FILE \
+      "${FLUXES}/NOvA/FHC_Flux_NOvA_ND_2017.root"
+bb_cont_set_env ${BASE} NOVANDFLUX_NUMODE_HIST "flux_numu"
+
+bb_cont_set_env ${BASE} ND280FLUX_NUMODE_FILE \
+      "${FLUXES}/T2K/t2kflux_2016_minus250kA.root"
+bb_cont_set_env ${BASE} ND280FLUX_NUMODE_HIST "enu_nd280_numu"
+
+bb_cont_set_env ${BASE} SKFLUX_NUMODE_FILE \
+      "${FLUXES}/T2K/t2kflux_2016_minus250kA.root"
+bb_cont_set_env ${BASE} SKFLUX_NUMODE_HIST "enu_sk_numu"
+
+bb_cont_set_env ${BASE} ACCEPT_MAPS "/var/t2k-nova/accmaps"
+
+bb_cont_set_env ${BASE} T2KNOVASCRIPTS "/var/t2k-nova/scripts"
+
+# Some files for t2k-nova studies
+bb_cont_mkdir ${BASE} ${FLUXES}
+bb_cont_mkdir ${BASE} ${ACCEPT_MAPS}
+bb_cont_mkdir ${BASE} ${T2KNOVASCRIPTS}
+
+bb_add_from_pkg_dir ${BASE} fluxes ${FLUXES}
+bb_add_from_pkg_dir ${BASE} accmaps ${ACCEPT_MAPS}
+bb_add_from_pkg_dir ${BASE} t2k-nova-scripts ${T2KNOVASCRIPTS}
+
+
+
+bb_commit ${BASE}

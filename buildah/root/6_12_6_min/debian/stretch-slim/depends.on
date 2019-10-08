@@ -1,4 +1,0 @@
-# NAME[:TAG=latest]         ROOT IMAGE[:tag=latest]  [VERSION=default]
-pythia:debian_stretch-slim          debian:stretch-slim       default
-#  buildbox:debian_stretch-slim     debian:stretch-slim       default
-runbox_min:debian_stretch-slim          debian:stretch-slim   default

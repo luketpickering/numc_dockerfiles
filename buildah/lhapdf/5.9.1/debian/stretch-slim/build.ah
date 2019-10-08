@@ -1,0 +1,49 @@
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+source $BB_SCRIPT_DIR/buildah.funcs
+COMPILE_STAGE_NAME_NAME="${BB_PKG_IMAGE_FQNAME}_build"
+NAME="${BB_PKG_NAME}"
+
+if [ -z ${N_CORE} ]; then
+    N_CORE=4
+fi
+
+if ! podman image exists ${COMPILE_STAGE_NAME}; then
+
+  BUILD=$(bb_from_buildbox)
+
+  bb_cont_mkdir_cd ${BUILD} /opt/${NAME}-src
+
+  buildah run ${BUILD} wget --no-check-certificate \
+                          https://lhapdf.hepforge.org/downloads/?f=lhapdf-${BB_PKG_VERS}.tar.gz \
+                          -O lhapdf-${BB_PKG_VERS}.tar.gz
+
+  buildah run ${BUILD} tar -zxvf lhapdf-${BB_PKG_VERS}.tar.gz
+
+  bb_cont_mkdir_cd ${BUILD} /opt/${NAME}-build
+
+
+  buildah run ${BUILD} /opt/${NAME}-src/lhapdf-${BB_PKG_VERS}/configure \
+                                      --prefix=/opt/lhapdf/${BB_PKG_VERS} \
+                                      --disable-old-ccwrap \
+                                      --disable-pyext
+
+  # RUN make install -j ${N_CORE}
+  buildah run ${BUILD} make install -j ${N_CORE}
+
+  bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
+
+fi
+
+BASE=$(bb_from_runbox_min)
+
+bb_consume_target ${NAME} ${BB_PKG_VERS} \
+  $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
+
+bb_commit ${BASE}

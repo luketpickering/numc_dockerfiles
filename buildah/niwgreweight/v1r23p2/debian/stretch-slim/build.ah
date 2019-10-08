@@ -1,0 +1,50 @@
+#!/bin/bash
+
+#If anything fails, we back out
+set +x
+set -e
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+source $BB_SCRIPT_DIR/buildah.funcs
+COMPILE_STAGE_NAME="${BB_PKG_IMAGE_FQNAME}_build"
+NAME=${BB_PKG_NAME}
+
+if [ -z ${N_CORE} ]; then
+    N_CORE=4
+fi
+
+if ! podman image exists ${COMPILE_STAGE_NAME}; then
+
+  BUILD=$(bb_from_buildbox)
+
+  bb_inject neut 5.3.3 ${BUILD}
+
+  # NIWGReWeight src is not freely available, must take a copy of a local repository
+  bb_cont_mkdir ${BUILD} /opt/${NAME}-src
+  bb_add_from_pkg_dir ${BUILD} \
+    NIWGReWeight \
+    /opt/${NAME}-src
+
+  bb_cont_cd ${BUILD} /opt/${NAME}-src
+  buildah run ${BUILD} make
+
+  NIWG=/opt/${NAME}/${BB_PKG_VERS}
+  bb_cont_mkdir ${BUILD} ${NIWG}
+  bb_cont_cp ${BUILD} -r \
+      /opt/${NAME}-src/libNIWGReWeight.so \
+      "/opt/${NAME}-src/*.h" \
+      /opt/${NAME}-src/inputs \
+      ${NIWG}/
+
+  bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
+
+fi
+
+BASE=$(bb_from_runbox_min)
+
+bb_consume_target ${NAME} ${BB_PKG_VERS} \
+  $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
+
+bb_commit ${BASE}

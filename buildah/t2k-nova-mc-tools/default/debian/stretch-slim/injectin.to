@@ -1,0 +1,26 @@
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+set +x
+
+FROM=$1
+TO=$2
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/buildah.funcs
+
+bb_mv_build_target ${FROM} ${TO} t2kreweight v1r27p3
+bb_mv_build_target ${FROM} ${TO} novarwgt v00.23
+
+bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME} /opt/${BB_INJ_NAME}
+
+NUISANCE=/opt/nuisance
+
+bb_cont_set_env ${TO} NEUT_ROOT ${NUISANCE}
+bb_add_to_path_env ${TO} PATH ${NUISANCE}/bin
+bb_add_to_path_env ${TO} LD_LIBRARY_PATH ${NUISANCE}/lib

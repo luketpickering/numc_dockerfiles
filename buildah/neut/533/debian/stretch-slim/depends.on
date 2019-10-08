@@ -1,8 +1,0 @@
-# NAME[:TAG=latest]         ROOT IMAGE[:tag=latest]  [VERSION=default]
-root:debian_stretch-slim            debian:stretch-slim       6_12_6_min
-#  pythia:debian_stretch-slim       debian:stretch-slim       default
-#    buildbox:debian_stretch-slim   debian:stretch-slim       default
-#    runbox:debian_stretch-slim     debian:stretch-slim       default
-cernlib:debian_stretch-slim         debian:stretch-slim       default
-#  buildbox:debian_stretch-slim     debian:stretch-slim       default
-#  runbox:debian_stretch-slim       debian:stretch-slim       default
