@@ -48,6 +48,8 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   bb_cont_mkdir ${BUILD} /opt/${NAME}/${BB_PKG_VERS}/lib \
                          /opt/${NAME}/${BB_PKG_VERS}/include
 
+  buildah run ${BUILD} ln -s /opt/${NAME}/${BB_PKG_VERS}/include \
+                             /opt/${NAME}/${BB_PKG_VERS}/src
   bb_cont_cp ${BUILD} "/opt/${NAME}-src/src/*.h" \
                        /opt/${NAME}/${BB_PKG_VERS}/include/
   bb_cont_cp ${BUILD} /opt/${NAME}-src/lib/libT2KReWeight.so\

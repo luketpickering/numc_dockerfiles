@@ -20,4 +20,5 @@ bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME} /opt/${BB_INJ_NAME}
 NOVARWGT=/opt/${BB_INJ_NAME}/${BB_INJ_VERS}
 
 bb_cont_set_env ${TO} NOVARWGT ${NOVARWGT}
+bb_cont_set_env ${TO} NOVARWGT_DATA ${NOVARWGT}/data
 bb_add_to_path_env ${TO} LD_LIBRARY_PATH ${NOVARWGT}/lib

@@ -1,10 +1,11 @@
 #!/bin/bash
 
-TAG=$1
-if [ -z $TAG ]; then
-  echo "Error ${0} expected to be passed a tag."
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
   exit 1
 fi
+
+source $BB_SCRIPT_DIR/buildah.funcs
 
 BASE=$(buildah from debian:stretch-slim)
 
@@ -23,8 +24,4 @@ buildah run ${BASE} apt install --no-install-recommends -y \
                                 ${RETREVAL_SW} \
                                 ${MISC_SW}
 
-buildah config --entrypoint /bin/bash ${BASE}
-
-bb_commit ${BASE} ${BB_REPO_SL}buildbox:${TAG}
-
-buildah rm ${BASE}
+bb_commit ${BASE}

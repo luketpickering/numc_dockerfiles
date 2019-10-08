@@ -16,6 +16,11 @@ FLUX_HIST=${ND280FLUX_NUMODE_HIST}
 MDLQE=02
 CRSPATH=${NEUT_CRSDAT}
 
+if [ -e ND280.neut.root ]; then
+   echo "Already have file: ND280.neut.root, not overwriting."
+   exit 1
+fi
+
 #if it was sourced as . setup.sh then you can't scrub off the end... assume that
 #we are in the correct directory.
 if ! echo "${BASH_SOURCE}" | grep "/" --silent; then
@@ -23,8 +28,6 @@ if ! echo "${BASH_SOURCE}" | grep "/" --silent; then
 else
   SETUPDIR=$(readlink -f ${BASH_SOURCE%/*})
 fi
-
-echo ${SETUPDIR}
 
 cp ${SETUPDIR}/stub.card ND280.card.cfg
 for i in NEVS TARG_N \

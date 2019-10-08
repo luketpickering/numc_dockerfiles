@@ -1,15 +1,16 @@
 #!/bin/bash
 
-TAG=$1
-if [ -z $TAG ]; then
-  echo "Error ${0} expected to be passed a tag."
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
   exit 1
 fi
+
+source $BB_SCRIPT_DIR/buildah.funcs
 
 BASE=$(buildah from debian:stretch-slim)
 
 RUN_LIBS="libstdc++-6-dev libgfortran3 libfreetype6 libpcre3 liblzma5 zlib1g libgsl2 libxml2 libssl1.1 libfftw3-3 liblog4cpp5v5"
-RUN_SW="python"
+RUN_SW="python nano vim emacs"
 
 buildah run ${BASE} apt update
 buildah run ${BASE} apt upgrade -y
@@ -17,6 +18,4 @@ buildah run ${BASE} apt install --no-install-recommends -y \
                                 ${RUN_LIBS} \
                                 ${RUN_SW}
 
-buildah config --entrypoint /bin/bash ${BASE}
-
-bb_commit ${BASE} ${BB_REPO_SL}runbox_min:${TAG}
+bb_commit ${BASE}

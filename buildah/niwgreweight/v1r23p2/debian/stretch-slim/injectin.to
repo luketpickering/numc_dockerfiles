@@ -22,3 +22,5 @@ NIWG="/opt/${BB_INJ_NAME}/${BB_INJ_VERS}"
 bb_cont_set_env ${TO} NIWG ${NIWG}
 bb_add_to_path_env ${TO} LD_LIBRARY_PATH \
    ${NIWG}
+bb_add_to_path_env ${TO} ROOT_INCLUDE_PATH \
+   ${NIWG}

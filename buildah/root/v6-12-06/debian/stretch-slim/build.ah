@@ -44,7 +44,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
   bb_cont_set_env ${BUILD} USE_PARALLEL_MINUIT2 0
 
-  PYTHIA6=$(bb_get_cont_env ${BUILD} PYTHIA6)
+  PYTHIA6=$(bb_cont_get_env ${BUILD} PYTHIA6)
 
   if [ "${BB_PKG_VERS}" = "v6-12-06_min" ]; then
     buildah run ${BUILD} cmake /opt/${NAME}-src \
@@ -74,9 +74,9 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
   # # Tidy up some stuff ROOT installs needlessly
   buildah run ${BUILD} rm -rf \
-      /opt/${NAME}/${BB_PKG_VERS}/test
-      /opt/${NAME}/${BB_PKG_VERS}/tutorials
-      /opt/${NAME}/${BB_PKG_VERS}/README
+      /opt/${NAME}/${BB_PKG_VERS}/test \
+      /opt/${NAME}/${BB_PKG_VERS}/tutorials \
+      /opt/${NAME}/${BB_PKG_VERS}/README \
       /opt/${NAME}/${BB_PKG_VERS}/macros
 
   bb_commit ${BUILD} ${COMPILE_STAGE_NAME}

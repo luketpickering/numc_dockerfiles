@@ -7,14 +7,24 @@ fi
 
 NEVS=$1
 
-RUNUM=${RANDOM}
+RUNNUM=${RANDOM}
+
+if [ -e gntp.${RUNNUM}.ghep.root ]; then
+   echo "Already have file: gntp.${RUNNUM}.ghep.root, not overwriting."
+   exit 1
+fi
+
+if [ -e ND280.CH.prep.root ]; then
+   echo "Already have file: ND280.CH.prep.root, not overwriting."
+   exit 1
+fi
 
 gevgen \
    -p 14 -t ${CHTARGET} \
    -r ${RUNNUM} -e 0.1,10 \
    -f ${ND280FLUX_NUMODE_FILE},${ND280FLUX_NUMODE_HIST} \
    -n ${NEVS} \
-   --cross-sections ${GENIE_XSEC_DIR}/gxspl-FNALsmall.xml.gz \
+   --cross-sections ${GENIE_XSEC_FILE} \
    --event-generator-list Default+MEC \
    --message-thresholds Messenger_whisper.xml
 
@@ -27,6 +37,6 @@ if [ -e gntp.${RUNNUM}.ghep.root ]; then
                -f ${ND280FLUX_NUMODE_FILE},${ND280FLUX_NUMODE_HIST} \
                -t ${CHTARGET}
 else
-   echo "Failed to produce expected output file: gntp.${RUNUM}.ghep.root"
+   echo "Failed to produce expected output file: gntp.${RUNNUM}.ghep.root"
    exit 1
 fi
