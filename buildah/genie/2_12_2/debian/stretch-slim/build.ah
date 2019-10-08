@@ -74,8 +74,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   # Install some things that the GENIE isntall script forget.
   bb_cont_cp ${BUILD} -r /opt/GENIE-src/Generator/src/Interfaces \
                          ${GENIE}/include/GENIE/
-  bb_cont_cp ${BUILD} -r /opt/GENIE-src/Generator/src/Interfaces \
-                         ${GENIE}/
+  bb_cont_cp ${BUILD} /opt/GENIE-src/Generator/VERSION ${GENIE}/
   bb_cont_cp ${BUILD} -r /opt/GENIE-src/Generator/config \
                          ${GENIE}/
   bb_cont_mkdir ${BUILD} ${GENIE}/data/
@@ -83,12 +82,12 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
                          ${GENIE}/data/
 
   bb_cont_mkdir ${BUILD} ${GENIE}/src/make/
-  bb_cont_cp ${BUILD} /opt/GENIE-src/Generator/src/make/Make.config_no_paths
+  bb_cont_cp ${BUILD} /opt/GENIE-src/Generator/src/make/Make.config_no_paths \
                       ${GENIE}/src/make/
 
   # Make symlinks for software that includes GENIE headers via ${GENIE}/src
   bb_cont_cd ${BUILD} ${GENIE}/src
-  buildah run ${BUILD} bash -c "ln -s -t . ../include/GENIE/"
+  buildah run ${BUILD} bash -c "ln -s -t . ../include/GENIE/*/"
 
   bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
 

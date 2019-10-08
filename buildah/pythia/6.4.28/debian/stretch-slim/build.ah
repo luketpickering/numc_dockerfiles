@@ -42,7 +42,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
     /opt/${NAME}/${BB_PKG_VERS}/libPythia6.so.${BB_PKG_VERS} \
     /opt/${NAME}/${BB_PKG_VERS}/libPythia6.so
 
-  bb_commit ${BUILD} ${COMPILE_STAGE}
+  bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
 
 fi
 

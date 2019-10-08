@@ -31,6 +31,8 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
   bb_cont_mkdir_cd ${BUILD} /opt/${NAME}-build
 
+  PYTHIA6=$(bb_cont_get_env ${BUILD} PYTHIA6)
+  bb_cont_set_env ${BUILD} PYTHIA6_LIBRARY ${PYTHIA6}
   buildah run ${BUILD} cmake /opt/${NAME}-src \
           -DCMAKE_INSTALL_PREFIX=/opt/${NAME}/${BB_PKG_VERS} \
           -DNOVARWGT_USE_NUSIMDATA=OFF -DNOVARWGT_USE_CETLIB=OFF \
@@ -39,7 +41,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
   buildah run ${BUILD} make install -j ${N_CORE}
 
-  bb_commit ${BUILD} ${COMPILE_STAGE}
+  bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
 
 fi
 

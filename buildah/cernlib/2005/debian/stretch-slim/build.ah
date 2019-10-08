@@ -34,7 +34,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
       /opt/${NAME}-src/cernlibgcc5-/cernlib_build/2005/{bin,include,lib} \
       /opt/${NAME}/${BB_PKG_VERS}
 
-  bb_commit ${BUILD} ${COMPILE_STAGE}
+  bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
 
 fi
 
