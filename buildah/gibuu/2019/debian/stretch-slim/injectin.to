@@ -1,0 +1,42 @@
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+
+FROM=$1
+TO=$2
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/buildah.funcs
+
+bb_mv_build_target ${FROM} ${TO} root v6-12-06_min
+
+bb_cont_to_cont_copy ${FROM} ${TO} /opt/RootTuple/ /opt/RootTuple/
+if bb_is_debug_build; then
+  bb_cont_to_cont_copy ${FROM} ${TO} /opt/RootTuple-src \
+                                     /opt/RootTuple-src
+fi
+
+
+bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME} /opt/${BB_INJ_NAME}
+if bb_is_debug_build; then
+  bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME}-src \
+                                     /opt/${BB_INJ_NAME}-src
+fi
+
+ROOTTUPLE=/opt/RootTuple/${ROOTTUPLEVERS}
+bb_cont_set_env ${TO} ROOTTUPLE ${ROOTTUPLE}
+bb_add_to_path_env ${TO} PATH ${ROOTTUPLE}/bin
+bb_add_to_path_env ${TO} LD_LIBRARY_PATH ${ROOTTUPLE}/lib
+
+GIBUU=/opt/${BB_INJ_NAME}/${BB_INJ_VERS}
+bb_cont_set_env ${TO} GIBUU ${GIBUU}
+bb_cont_set_env ${TO} GIBUU_CARDS \
+     /var/${BB_INJ_NAME}/${BB_INJ_VERS}/share/jobCards
+bb_cont_set_env ${TO} GIBUU_INPUT \
+     /var/${BB_INJ_NAME}/${BB_INJ_VERS}/share/buuinput
+bb_add_to_path_env ${TO} PATH ${GIBUU}/bin

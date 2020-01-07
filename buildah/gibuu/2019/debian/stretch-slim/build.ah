@@ -1,0 +1,89 @@
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+source $BB_SCRIPT_DIR/buildah.funcs
+COMPILE_STAGE_NAME="${BB_PKG_IMAGE_FQNAME}_build"
+NAME="${BB_PKG_NAME}"
+ROOTTUPLEVERS="1.0.0"
+
+if [ -z ${N_CORE} ]; then
+    N_CORE=4
+fi
+
+if ! podman image exists ${COMPILE_STAGE_NAME}; then
+
+  BUILD=$(bb_from_buildbox)
+
+  bb_inject root v6-12-06_min ${BUILD}
+
+  bb_cont_mkdir_cd ${BUILD} /opt/RootTuple-src
+  buildah run ${BUILD} git clone -c http.sslVerify=false \
+              https://github.com/davidchall/RootTuple.git
+  bb_cont_cd ${BUILD} /opt/RootTuple-src/RootTuple
+  buildah run ${BUILD} git checkout ${ROOTTUPLEVERS}
+  buildah run ${BUILD} \
+     sed -i \
+        "s/add_subdirectory (docs)/#add_subdirectory (docs)/g" \
+        CMakeLists.txt
+
+  BUILD_TYPE="RELEASE"
+  if bb_is_debug_build; then
+    BUILD_TYPE="DEBUG"
+  fi
+
+  bb_cont_mkdir_cd ${BUILD} /opt/RootTuple-build
+  buildah run ${BUILD} cmake /opt/RootTuple-src/RootTuple\
+          -DCMAKE_INSTALL_PREFIX=/opt/RootTuple/${ROOTTUPLEVERS} \
+          -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+  buildah run ${BUILD} make -j ${N_CORE}
+  buildah run ${BUILD} make install
+
+  ROOTTUPLE=/opt/RootTuple/${ROOTTUPLEVERS}
+  bb_cont_set_env ${BUILD} ROOTTUPLE ${ROOTTUPLE}
+  bb_add_to_path_env ${BUILD} PATH ${ROOTTUPLE}/bin
+  bb_add_to_path_env ${BUILD} LD_LIBRARY_PATH ${ROOTTUPLE}/lib
+
+  bb_cont_mkdir_cd ${BUILD} /opt/${NAME}-src
+
+  buildah run ${BUILD} wget --no-check-certificate \
+          https://gibuu.hepforge.org/downloads?f=release${BB_PKG_VERS}.tar.gz \
+          -O release${BB_PKG_VERS}.tar.gz
+
+  buildah run ${BUILD} tar -zxvf release${BB_PKG_VERS}.tar.gz
+
+  buildah run ${BUILD} wget --no-check-certificate \
+          https://gibuu.hepforge.org/downloads?f=buuinput${BB_PKG_VERS}.tar.gz \
+          -O buuinput${BB_PKG_VERS}.tar.gz
+  buildah run ${BUILD} tar -zxvf buuinput${BB_PKG_VERS}.tar.gz
+
+  bb_cont_cd ${BUILD} /opt/${NAME}-src/release${BB_PKG_VERS}
+
+  buildah run ${BUILD} make withROOT=1 FORT=gfortran MODE=lto -j ${N_CORE}
+
+  bb_cont_mkdir ${BUILD} /opt/${NAME}/${BB_PKG_VERS}/bin
+  bb_cont_cp ${BUILD} /opt/${NAME}-src/release${BB_PKG_VERS}/testRun/GiBUU.x \
+                      /opt/${NAME}/${BB_PKG_VERS}/bin/
+
+  bb_cont_mkdir ${BUILD} /var/${NAME}/${BB_PKG_VERS}/share
+  bb_cont_cp ${BUILD} -r \
+          /opt/${NAME}-src/release${BB_PKG_VERS}/testRun/jobCards\
+          /var/${NAME}/${BB_PKG_VERS}/share/
+  bb_cont_cp ${BUILD} -r \
+          /opt/${NAME}-src/buuinput${BB_PKG_VERS}\
+          /var/${NAME}/${BB_PKG_VERS}/share/buuinput
+
+  bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
+
+fi
+
+BASE=$(bb_from_runbox_min)
+
+bb_consume_target ${NAME} ${BB_PKG_VERS} \
+  $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
+
+bb_commit ${BASE}

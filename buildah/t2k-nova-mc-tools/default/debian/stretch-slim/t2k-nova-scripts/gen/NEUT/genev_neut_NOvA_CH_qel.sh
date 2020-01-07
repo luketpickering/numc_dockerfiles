@@ -25,8 +25,8 @@ TARG_A=12
 MDLQE=02
 CRSPATH=${NEUT_CRSDAT}
 
-if [ -e NOvAND.CH.${BEAMMODE}.neut.root ]; then
-   echo "Already have file: NOvAND.CH.${BEAMMODE}.neut.root, not overwriting."
+if [ -e NOvAND.CH.qel.${BEAMMODE}.neut.root ]; then
+   echo "Already have file: NOvAND.CH.qel.${BEAMMODE}.neut.root, not overwriting."
    exit 1
 fi
 
@@ -38,7 +38,7 @@ else
   SETUPDIR=$(readlink -f ${BASH_SOURCE%/*})
 fi
 
-cp ${SETUPDIR}/stub.card NOvAND.${BEAMMODE}.card.cfg
+cp ${SETUPDIR}/qel.stub.card NOvAND.CH.qel.${BEAMMODE}.card.cfg
 for i in NEVS TARG_N \
          TARG_Z \
          TARG_H \
@@ -48,20 +48,19 @@ for i in NEVS TARG_N \
          FLUX_HIST \
          MDLQE \
          CRSPATH; do
-  sed -i "s|__${i}__|${!i}|g" NOvAND.${BEAMMODE}.card.cfg
+  sed -i "s|__${i}__|${!i}|g" NOvAND.CH.qel.${BEAMMODE}.card.cfg
 done
+mv NOvAND.CH.qel.${BEAMMODE}.card.cfg NOvAND.CH.qel.${BEAMMODE}.card
 
-mv NOvAND.${BEAMMODE}.card.cfg NOvAND.${BEAMMODE}.card
+echo "Running neutroot2 NOvAND.CH.qel.${BEAMMODE}.card NOvAND.CH.qel.${BEAMMODE}.neut.root for ${NEVS} events."
+neutroot2 NOvAND.CH.qel.${BEAMMODE}.card NOvAND.CH.qel.${BEAMMODE}.neut.root &> /dev/null
 
-echo "Running neutroot2 NOvAND.${BEAMMODE}.card NOvAND.CH.${BEAMMODE}.neut.root for ${NEVS} events."
-neutroot2 NOvAND.${BEAMMODE}.card NOvAND.CH.${BEAMMODE}.neut.root &> /dev/null
+if [ -e NOvAND.CH.qel.${BEAMMODE}.neut.root ]; then
+   rm -f fort.77 NOvAND.CH.qel.${BEAMMODE}.card
 
-if [ -e NOvAND.CH.${BEAMMODE}.neut.root ]; then
-   rm -f fort.77 NOvAND.${BEAMMODE}.card
-
-   PrepareNEUT -i NOvAND.CH.${BEAMMODE}.neut.root \
+   PrepareNEUT -i NOvAND.CH.qel.${BEAMMODE}.neut.root \
                -f ${FLUX_FILE},${FLUX_HIST} -G
 else
-   echo "Failed to produce expected output file: NOvAND.CH.${BEAMMODE}.neut.root"
+   echo "Failed to produce expected output file: NOvAND.CH.qel.${BEAMMODE}.neut.root"
    exit 1
 fi

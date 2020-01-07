@@ -1,0 +1,31 @@
+#!/bin/bash
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/buildah.funcs
+
+BASE=$(buildah from centos:6)
+
+BUILD_SW="gcc gcc-c++ gcc-gfortran cmake imake make libtool"
+BUILD_LIBS="gsl-devel gmp-devel libxml2-devel log4cpp-devel bzip2-devel pcre-devel xz-devel zlib-devel freetype-devel openssl-devel fftw-devel"
+BUILD_XLIBS="libX11-devel libXt-devel libXft-devel libXpm-devel libXext-devel glew-devel openmotif-devel mesa-libGLU-devel libpng-devel libjpeg-devel ftgl-devel"
+RETREVAL_SW="git wget subversion"
+MISC_SW="vim nano gdb csh tcsh ed quota python-dev which"
+
+buildah run ${BASE} yum -y update
+buildah run ${BASE} yum -y install epel-release
+buildah run ${BASE} yum -y install \
+                                ${BUILD_SW} \
+                                ${BUILD_LIBS} \
+                                ${BUILD_XLIBS} \
+                                ${RETREVAL_SW} \
+                                ${MISC_SW}
+
+buildah run ${BASE} sed -i "s/alias/#alias/g" /root/.bashrc
+buildah run ${BASE} sed -i "s/alias/#alias/g" /root/.cshrc
+buildah run ${BASE} sed -i "s/alias/#alias/g" /root/.tcshrc
+
+bb_commit ${BASE}

@@ -25,8 +25,8 @@ TARG_A=12
 MDLQE=02
 CRSPATH=${NEUT_CRSDAT}
 
-if [ -e ND280.${BEAMMODE}.neut.root ]; then
-   echo "Already have file: ND280.${BEAMMODE}.neut.root, not overwriting."
+if [ -e ND280.qel.${BEAMMODE}.neut.root ]; then
+   echo "Already have file: ND280.qel.${BEAMMODE}.neut.root, not overwriting."
    exit 1
 fi
 
@@ -38,7 +38,7 @@ else
   SETUPDIR=$(readlink -f ${BASH_SOURCE%/*})
 fi
 
-cp ${SETUPDIR}/stub.card ND280.${BEAMMODE}.card.cfg
+cp ${SETUPDIR}/qel.stub.card ND280.qel.${BEAMMODE}.card.cfg
 for i in NEVS TARG_N \
          TARG_Z \
          TARG_H \
@@ -48,19 +48,19 @@ for i in NEVS TARG_N \
          FLUX_HIST \
          MDLQE \
          CRSPATH; do
-  sed -i "s|__${i}__|${!i}|g" ND280.${BEAMMODE}.card.cfg
+  sed -i "s|__${i}__|${!i}|g" ND280.qel.${BEAMMODE}.card.cfg
 done
-mv ND280.${BEAMMODE}.card.cfg ND280.${BEAMMODE}.card
+mv ND280.qel.${BEAMMODE}.card.cfg ND280.qel.${BEAMMODE}.card
 
-echo "Running neutroot2 ND280.${BEAMMODE}.card ND280.${BEAMMODE}.neut.root for ${NEVS} events."
-neutroot2 ND280.${BEAMMODE}.card ND280.${BEAMMODE}.neut.root &> /dev/null
+echo "Running neutroot2 ND280.qel.${BEAMMODE}.card ND280.qel.${BEAMMODE}.neut.root for ${NEVS} events."
+neutroot2 ND280.qel.${BEAMMODE}.card ND280.qel.${BEAMMODE}.neut.root &> /dev/null
 
-if [ -e ND280.${BEAMMODE}.neut.root ]; then
-   rm -f fort.77 ND280.${BEAMMODE}.card
+if [ -e ND280.qel.${BEAMMODE}.neut.root ]; then
+   rm -f fort.77 ND280.qel.${BEAMMODE}.card
 
-   PrepareNEUT -i ND280.${BEAMMODE}.neut.root \
+   PrepareNEUT -i ND280.qel.${BEAMMODE}.neut.root \
                -f ${FLUX_FILE},${FLUX_HIST} -G
 else
-   echo "Failed to produce expected output file: ND280.${BEAMMODE}.neut.root"
+   echo "Failed to produce expected output file: ND280.qel.${BEAMMODE}.neut.root"
    exit 1
 fi

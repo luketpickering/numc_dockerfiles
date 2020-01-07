@@ -1,0 +1,11 @@
+<nuisance>
+
+  <parameter type="nova_parameter" name="RPAWeightCCQE_2017" nominal="1" />
+  <parameter type="nova_parameter" name="RESRPAWeightQ2_2017" nominal="1" />
+  <parameter type="nova_parameter" name="MAQEWeight_2018" nominal="1" />
+  <parameter type="nova_parameter" name="Nonres1PiWgt" nominal="1" />
+  <parameter type="nova_parameter" name="MEC2018RPAFix_RESlike_Wgt" nominal="1" />
+
+  <sample name="T2KNOvAFlatTree" input="__GEN__:__INPF__" acc_map_file="__ACC_FILE__" acc_map_hist_q0q3="__ACC_HIST_Q0Q3__" acc_map_hist_ptheta="__ACC_HIST_PTHETA__" acc_map_hist_enuy="__ACC_HIST_ENUY__" />
+
+</nuisance>

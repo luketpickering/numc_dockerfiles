@@ -1,0 +1,58 @@
+<nuisance>
+
+  <parameter name="NCasc_FrInelLow_pi" nominal="-0.32332" type="t2k_parameter" state="FIX"/>
+  <parameter name="NCasc_FrInelHigh_pi" nominal="-0.0086159" type="t2k_parameter" state="FIX"/>
+  <parameter name="NCasc_FrPiProd_pi" nominal="0.040936" type="t2k_parameter" state="FIX"/>
+  <parameter name="NCasc_FrAbs_pi" nominal="-0.34771" type="t2k_parameter" state="FIX"/>
+  <parameter name="NCasc_FrCExLow_pi" nominal="-0.088986" type="t2k_parameter" state="FIX"/>
+  <parameter name="NCasc_FrCExHigh_pi" nominal="0.022924" type="t2k_parameter" state="FIX"/>
+
+  <parameter name="NXSec_MaCCQE" nominal="1.1314" type="t2k_parameter" state="ABS"/>
+  <parameter name="NXSec_CA5RES" nominal="0.97601" type="t2k_parameter" state="ABS"/>
+  <parameter name="NXSec_MaNFFRES" nominal="0.806" type="t2k_parameter" state="ABS"/>
+  <parameter name="NXSec_BgSclRES" nominal="1.3147" type="t2k_parameter" state="ABS"/>
+
+  <parameter name="NIWG2014a_pF_C12" nominal="224.16" type="t2k_parameter" state="ABS"/>
+  <parameter name="NIWG2014a_pF_O16" nominal="204.98" type="t2k_parameter" state="ABS"/>
+  <parameter name="NIWGMEC_PDDWeight_C12" nominal="0" type="t2k_parameter" state="ABS"/>
+  <parameter name="NIWGMEC_PDDWeight_O16" nominal="0" type="t2k_parameter" state="ABS"/>
+  <parameter name="NIWG2012a_dismpishp" nominal="0.38541" type="t2k_parameter" state="FIX"/>
+
+  <parameter name="BeRPA_A" nominal="0.6878" type="custom_parameter" state="FIX"/>
+  <parameter name="BeRPA_B" nominal="1.5993" type="custom_parameter" state="FIX"/>
+  <parameter name="BeRPA_D" nominal="0.96248" type="custom_parameter" state="FIX"/>
+  <parameter name="BeRPA_U" nominal="1.2" type="custom_parameter" state="FIX"/>
+  <parameter name="BeRPA_E" nominal="0.8749" type="custom_parameter" state="FIX"/>
+
+  <!-- CC MEC -->
+  <parameter name="mode_2" nominal="1.5" type="modenorm_parameter" state="FIX"/>
+
+  <!-- Coherent -->
+  <!-- CC coherent-->
+  <parameter name="mode_16" nominal="0.87408" type="modenorm_parameter" state="FIX"/>
+  <!-- NC coherent -->
+  <parameter name="mode_36" nominal="0.93795" type="modenorm_parameter" state="FIX"/>
+  <!-- NC1gamma -->
+  <parameter name="mode_38" nominal="1.0" type="modenorm_parameter" state="FIX"/>
+
+  <!-- NC_other -->
+  <!-- NCMpi-->
+  <parameter name="mode_41" nominal="1.208" type="modenorm_parameter" state="FIX"/>
+  <!-- NC1eta1n-->
+  <parameter name="mode_42" nominal="1.208" type="modenorm_parameter" state="FIX"/>
+  <!-- NC1eta1p-->
+  <parameter name="mode_43" nominal="1.208" type="modenorm_parameter" state="FIX"/>
+  <!-- NC1K01Lam-->
+  <parameter name="mode_44" nominal="1.208" type="modenorm_parameter" state="FIX"/>
+  <!-- NC1K+1Lam-->
+  <parameter name="mode_45" nominal="1.208" type="modenorm_parameter" state="FIX"/>
+  <!-- NC DIS-->
+  <parameter name="mode_46" nominal="1.208" type="modenorm_parameter" state="FIX"/>
+  <!-- NC EL 1p-->
+  <parameter name="mode_51" nominal="1.208" type="modenorm_parameter" state="FIX"/>
+  <!-- NC EL 1n-->
+  <parameter name="mode_52" nominal="1.208" type="modenorm_parameter" state="FIX"/>
+
+  <sample name="T2KNOvAFlatTree" input="__GEN__:__INPF__" acc_map_file="__ACC_FILE__" acc_map_hist_q0q3="__ACC_HIST_Q0Q3__" acc_map_hist_ptheta="__ACC_HIST_PTHETA__" acc_map_hist_enuy="__ACC_HIST_ENUY__" />
+
+</nuisance>

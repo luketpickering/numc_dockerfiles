@@ -5,19 +5,28 @@ if [ -z $1 ]; then
   exit 1
 fi
 
+BEAMMODE="FHC"
+NU_PDG=14
+FLUX_FILE=${SKFLUX_NUMODE_FILE}
+FLUX_HIST=${SKFLUX_NUMODE_HIST}
+if [ ! -z $2 ] && [ "${2}" == "RHC" ]; then
+  echo "Running with "
+  NU_PDG=-14
+  FLUX_FILE=${SKFLUX_NUBARMODE_FILE}
+  FLUX_HIST=${SKFLUX_NUBARMODE_HIST}
+  BEAMMODE="RHC"
+fi
+
 NEVS=$1
 TARG_N=8
 TARG_Z=8
 TARG_H=2
 TARG_A=16
-NU_PDG=14
-FLUX_FILE=${SKFLUX_NUMODE_FILE}
-FLUX_HIST=${SKFLUX_NUMODE_HIST}
 MDLQE=02
 CRSPATH=${NEUT_CRSDAT}
 
-if [ -e SK.neut.root ]; then
-   echo "Already have file: SK.neut.root, not overwriting."
+if [ -e SK.${BEAMMODE}.neut.root ]; then
+   echo "Already have file: SK.${BEAMMODE}.neut.root, not overwriting."
    exit 1
 fi
 
@@ -29,7 +38,7 @@ else
   SETUPDIR=$(readlink -f ${BASH_SOURCE%/*})
 fi
 
-cp ${SETUPDIR}/stub.card SK.card.cfg
+cp ${SETUPDIR}/stub.card SK.${BEAMMODE}.card.cfg
 for i in NEVS \
          TARG_N \
          TARG_Z \
@@ -40,20 +49,20 @@ for i in NEVS \
          FLUX_HIST \
          MDLQE \
          CRSPATH; do
-  sed -i "s|__${i}__|${!i}|g" SK.card.cfg
+  sed -i "s|__${i}__|${!i}|g" SK.${BEAMMODE}.card.cfg
 done
 
-mv SK.card.cfg SK.card
+mv SK.${BEAMMODE}.card.cfg SK.${BEAMMODE}.card
 
-echo "Running neutroot2 SK.card SK.neut.root for ${NEVS} events."
-neutroot2 SK.card SK.neut.root &> /dev/null
+echo "Running neutroot2 SK.${BEAMMODE}.card SK.${BEAMMODE}.neut.root for ${NEVS} events."
+neutroot2 SK.${BEAMMODE}.card SK.${BEAMMODE}.neut.root &> /dev/null
 
-if [ -e SK.neut.root ]; then
-   rm -f fort.77 SK.card
+if [ -e SK.${BEAMMODE}.neut.root ]; then
+   rm -f fort.77 SK.${BEAMMODE}.card
 
-   PrepareNEUT -i SK.neut.root \
+   PrepareNEUT -i SK.${BEAMMODE}.neut.root \
                -f ${FLUX_FILE},${FLUX_HIST} -G
 else
-   echo "Failed to produce expected output file: SK.neut.root"
+   echo "Failed to produce expected output file: SK.${BEAMMODE}.neut.root"
    exit 1
 fi

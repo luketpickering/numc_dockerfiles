@@ -1,0 +1,23 @@
+#!/bin/bash
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/buildah.funcs
+
+BASE=$(buildah from centos:6)
+
+BUILD_SW="libstdc++-devel libgfortran"
+BUILD_LIBS="gsl gmp libxml2 log4cpp bzip2 pcre xz zlib freetype openssl fftw"
+MISC_SW="vim nano python"
+
+buildah run ${BASE} yum -y update
+buildah run ${BASE} yum -y install epel-release
+buildah run ${BASE} yum -y install \
+                                ${BUILD_SW} \
+                                ${BUILD_LIBS} \
+                                ${MISC_SW}
+
+bb_commit ${BASE}
