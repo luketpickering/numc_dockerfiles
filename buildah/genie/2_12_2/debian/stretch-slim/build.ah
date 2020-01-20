@@ -45,19 +45,24 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   bb_inject lhapdf 5.9.1 ${BUILD}
   bb_inject root v6-12-06_min ${BUILD}
 
-  bb_cont_set_env ${BUILD} GENIE /opt/GENIE-src/Generator
+  bb_cont_set_env ${BUILD} GENIE /opt/${NAME}-src/Generator
 
-  bb_cont_mkdir_cd ${BUILD} /opt/GENIE-src
+  bb_cont_mkdir_cd ${BUILD} /opt/${NAME}-src
 
-  buildah run ${BUILD} git clone -c http.sslVerify=false \
+  buildah run ${BUILD} git clone  \
                           https://github.com/GENIE-MC/Generator.git
 
-  bb_cont_cd ${BUILD} /opt/GENIE-src/Generator
+  bb_cont_cd ${BUILD} /opt/${NAME}-src/Generator
 
   buildah run ${BUILD} git checkout ${GIT_TAG}
 
+  DEBUG_ARG=""
+  if bb_is_debug_build; then
+    DEBUG_ARG="--enable-debug"
+  fi
+
   buildah run ${BUILD} ./configure --prefix=/opt/genie/${BB_PKG_VERS} \
-                                   --enable-rwght
+                                   --enable-rwght ${DEBUG_ARG}
   buildah run ${BUILD} make
 
   bb_cont_mkdir ${BUILD} /opt/genie/${BB_PKG_VERS}
@@ -65,24 +70,24 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
   LHAPATH=$(bb_cont_get_env ${BUILD} LHAPATH)
   bb_cont_cp ${BUILD} \
-    /opt/GENIE-src/Generator/data/evgen/pdfs/GRV98lo_patched.LHgrid \
+    /opt/${NAME}-src/Generator/data/evgen/pdfs/GRV98lo_patched.LHgrid \
     ${LHAPATH}/GRV98lo_patched.LHgrid
 
   GENIE="/opt/genie/${BB_PKG_VERS}"
   bb_cont_set_env ${BUILD} GENIE ${GENIE}
 
   # Install some things that the GENIE isntall script forget.
-  bb_cont_cp ${BUILD} -r /opt/GENIE-src/Generator/src/Interfaces \
+  bb_cont_cp ${BUILD} -r /opt/${NAME}-src/Generator/src/Interfaces \
                          ${GENIE}/include/GENIE/
-  bb_cont_cp ${BUILD} /opt/GENIE-src/Generator/VERSION ${GENIE}/
-  bb_cont_cp ${BUILD} -r /opt/GENIE-src/Generator/config \
+  bb_cont_cp ${BUILD} /opt/${NAME}-src/Generator/VERSION ${GENIE}/
+  bb_cont_cp ${BUILD} -r /opt/${NAME}-src/Generator/config \
                          ${GENIE}/
   bb_cont_mkdir ${BUILD} ${GENIE}/data/
-  bb_cont_cp ${BUILD} -r /opt/GENIE-src/Generator/data/evgen \
+  bb_cont_cp ${BUILD} -r /opt/${NAME}-src/Generator/data/evgen \
                          ${GENIE}/data/
 
   bb_cont_mkdir ${BUILD} ${GENIE}/src/make/
-  bb_cont_cp ${BUILD} /opt/GENIE-src/Generator/src/make/Make.config_no_paths \
+  bb_cont_cp ${BUILD} /opt/${NAME}-src/Generator/src/make/Make.config_no_paths \
                       ${GENIE}/src/make/
 
   # Make symlinks for software that includes GENIE headers via ${GENIE}/src

@@ -67,10 +67,11 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
                                /opt/${NAME}/${BB_PKG_VERS}/src/neutclass
 
   bb_cont_mkdir ${BUILD} /opt/${NAME}/${BB_PKG_VERS}/src/reweight
-  bb_cont_cp ${BUILD} "/opt/${NAME}-src/src/reweight/*.so" \
-                      "/opt/${NAME}-src/src/reweight/*.pcm" \
-                      "/opt/${NAME}-src/src/reweight/*.h" \
-                       /opt/${NAME}/${BB_PKG_VERS}/src/reweight
+  bb_cont_cp ${BUILD} -r "/opt/${NAME}-src/src/reweight/*.so" \
+                         "/opt/${NAME}-src/src/reweight/*.pcm" \
+                         "/opt/${NAME}-src/src/reweight/*.h" \
+                         "/opt/${NAME}-src/src/reweight/inputs" \
+                          /opt/${NAME}/${BB_PKG_VERS}/src/reweight
 
   bb_cont_mkdir ${BUILD} /var/${NAME}/${BB_PKG_VERS}
   bb_cont_cp ${BUILD} -r /opt/${NAME}-src/src/crsdat \

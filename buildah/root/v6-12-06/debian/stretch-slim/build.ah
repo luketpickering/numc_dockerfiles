@@ -25,7 +25,7 @@ if ! podman image exists ${SRC_STAGE_NAME}; then
   bb_cont_mkdir ${BUILD} /opt/${NAME}-src
   bb_cont_mkdir ${BUILD} /opt/${NAME}-build
 
-  buildah run ${BUILD} git clone -c http.sslVerify=false \
+  buildah run ${BUILD} git clone  \
       https://github.com/root-project/root.git /opt/${NAME}-src
 
   bb_commit ${BUILD} ${SRC_STAGE_NAME}
@@ -46,6 +46,11 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
   PYTHIA6=$(bb_cont_get_env ${BUILD} PYTHIA6)
 
+  BUILD_TYPE="RELEASE"
+  if bb_is_debug_build; then
+    BUILD_TYPE="DEBUG"
+  fi
+
   if [ "${BB_PKG_VERS}" = "v6-12-06_min" ]; then
     buildah run ${BUILD} cmake /opt/${NAME}-src \
       -Dminuit2=ON \
@@ -54,23 +59,19 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
       -Dx11=$OFF -Dxft=$OFF -Dopengl=$OFF \
       -Dminimal=ON \
       -Dpythia6=ON -DPYTHIA6_LIBRARY=${PYTHIA6}/libPythia6.so.6.4.28 \
-      -DCMAKE_BUILD_TYPE=RELEASE \
+      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -DCMAKE_INSTALL_PREFIX=/opt/${NAME}/${BB_PKG_VERS}
   else
     buildah run ${BUILD} cmake /opt/root-src \
       -Dminuit2=ON \
       -Dmathmore=ON \
       -Dpythia6=ON -DPYTHIA6_LIBRARY=${PYTHIA6}/libPythia6.so.6.4.28 \
-      -DCMAKE_BUILD_TYPE=RELEASE \
+      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -DCMAKE_INSTALL_PREFIX=/opt/${NAME}/${BB_PKG_VERS}
   fi
 
   buildah run ${BUILD} make -j ${N_CORE}
   buildah run ${BUILD} make install
-
-  # Add a symlink as the minimal install doesn't include the splash screen wrapper.
-  bb_cont_cd ${BUILD} /opt/${NAME}/${BB_PKG_VERS}
-  buildah run ${BUILD} ln -sf root.exe root
 
   # # Tidy up some stuff ROOT installs needlessly
   buildah run ${BUILD} rm -rf \
@@ -87,5 +88,9 @@ BASE=$(bb_from_runbox_min)
 
 bb_consume_target ${NAME} ${BB_PKG_VERS} \
   $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
+
+# Add a symlink as the minimal install doesn't include the splash screen wrapper.
+bb_cont_cd ${BASE} /opt/${NAME}/${BB_PKG_VERS}/bin
+buildah run ${BASE} ln -sf root.exe root
 
 bb_commit ${BASE}

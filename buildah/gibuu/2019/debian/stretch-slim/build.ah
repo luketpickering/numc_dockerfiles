@@ -22,7 +22,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   bb_inject root v6-12-06_min ${BUILD}
 
   bb_cont_mkdir_cd ${BUILD} /opt/RootTuple-src
-  buildah run ${BUILD} git clone -c http.sslVerify=false \
+  buildah run ${BUILD} git clone  \
               https://github.com/davidchall/RootTuple.git
   bb_cont_cd ${BUILD} /opt/RootTuple-src/RootTuple
   buildah run ${BUILD} git checkout ${ROOTTUPLEVERS}

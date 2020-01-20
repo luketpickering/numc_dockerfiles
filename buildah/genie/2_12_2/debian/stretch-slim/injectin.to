@@ -18,6 +18,11 @@ bb_mv_build_target ${FROM} ${TO} root v6-12-06_min
 
 bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME} /opt/${BB_INJ_NAME}
 bb_cont_to_cont_copy ${FROM} ${TO} /var/${BB_INJ_NAME} /var/${BB_INJ_NAME}
+if bb_is_debug_build; then
+  bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME}-src \
+                                     /opt/${BB_INJ_NAME}-src
+
+fi
 
 GENIE="/opt/${BB_INJ_NAME}/${BB_INJ_VERS}"
 bb_cont_set_env ${TO} GENIE ${GENIE}

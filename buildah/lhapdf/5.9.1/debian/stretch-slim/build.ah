@@ -7,7 +7,7 @@ if [ -z $BB_SCRIPT_DIR ]; then
   exit 1
 fi
 source $BB_SCRIPT_DIR/buildah.funcs
-COMPILE_STAGE_NAME_NAME="${BB_PKG_IMAGE_FQNAME}_build"
+COMPILE_STAGE_NAME="${BB_PKG_IMAGE_FQNAME}_build"
 NAME="${BB_PKG_NAME}"
 
 if [ -z ${N_CORE} ]; then

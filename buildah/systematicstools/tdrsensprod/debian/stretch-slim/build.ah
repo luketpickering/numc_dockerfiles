@@ -1,0 +1,47 @@
+#!/bin/bash
+set +x
+#If anything fails, we back out
+set -e
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+source $BB_SCRIPT_DIR/buildah.funcs
+COMPILE_STAGE_NAME="${BB_PKG_IMAGE_FQNAME}_build"
+NAME=${BB_PKG_NAME}
+
+if [ -z ${N_CORE} ]; then
+    N_CORE=4
+fi
+
+if ! podman image exists ${COMPILE_STAGE_NAME}; then
+
+  BUILD=$(bb_from_buildbox)
+
+  bb_inject genie 2_12_10 ${BUILD}
+
+  bb_cont_mkdir_cd ${BUILD} /opt/systematicstools-src
+
+  buildah run ${BUILD} git clone \
+              https://github.com/luketpickering/systematicstools.git
+
+  bb_cont_cd ${BUILD} /opt/systematicstools-src/systematicstools
+  buildah run ${BUILD} git checkout TDRSensProd
+
+  bb_cont_mkdir_cd ${BUILD} /opt/systematicstools-build
+  buildah run ${BUILD} cmake /opt/systematicstools-src/systematicstools \
+            -DCMAKE_INSTALL_PREFIX=/opt/systematicstools \
+            -DUSEART=0 -DCMAKE_BUILD_TYPE=RELEASE
+  buildah run ${BUILD} make -j ${N_CORE}
+  buildah run ${BUILD} make install
+
+  bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
+
+fi
+
+BASE=$(bb_from_devbox)
+
+bb_consume_target ${NAME} ${BB_PKG_VERS} \
+  $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
+
+bb_commit ${BASE}

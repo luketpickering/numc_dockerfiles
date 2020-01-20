@@ -19,6 +19,11 @@ echo
 bb_mv_build_target ${FROM} ${TO} pythia 6.4.28
 
 bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME} /opt/${BB_INJ_NAME}
+if bb_is_debug_build; then
+  bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME}-src \
+                                     /opt/${BB_INJ_NAME}-src
+
+fi
 
 ROOTSYS="/opt/${BB_INJ_NAME}/${BB_INJ_VERS}"
 bb_cont_set_env ${TO} ROOTSYS ${ROOTSYS}

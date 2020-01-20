@@ -29,7 +29,6 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
     /opt/${NAME}-src
   bb_cont_cd ${BUILD} /opt/${NAME}-src
 
-  buildah run ${BUILD} git checkout feature/autotools_build
   bb_cont_cd ${BUILD} /opt/${NAME}-src/src
   buildah run ${BUILD} autoreconf -i --force
   bb_cont_mkdir_cd ${BUILD} /opt/${NAME}-build
@@ -40,16 +39,11 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   buildah run ${BUILD} make -j ${N_CORE}
   buildah run ${BUILD} make install
 
-  bb_cont_mkdir ${BUILD} /var/${NAME}/${BB_PKG_VERS}
-  bb_cont_cp ${BUILD} -r /opt/${NAME}-src/src/crsdat \
-                         /opt/${NAME}-src/src/neutsmpl/Cards \
-                         /var/${NAME}/${BB_PKG_VERS}/
-
   bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
 
 fi
 
-BASE=$(bb_from_runbox_min)
+BASE=$(bb_from_devbox)
 
 bb_consume_target ${NAME} ${BB_PKG_VERS} \
   $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}

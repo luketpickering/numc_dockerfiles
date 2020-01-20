@@ -1,0 +1,24 @@
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+
+FROM=$1
+TO=$2
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/buildah.funcs
+
+bb_mv_build_target ${FROM} ${TO} genie 2_12_10
+
+SYSTTOOLS_ROOT=/opt/systematicstools
+bb_cont_to_cont_copy ${FROM} ${TO} ${SYSTTOOLS_ROOT} ${SYSTTOOLS_ROOT}
+
+bb_cont_set_env ${TO} SYSTTOOLS_ROOT ${SYSTTOOLS_ROOT}
+bb_add_to_path_env ${TO} PATH ${SYSTTOOLS_ROOT}/bin
+bb_add_to_path_env ${TO} LD_LIBRARY_PATH ${SYSTTOOLS_ROOT}/lib
+bb_add_to_path_env ${TO} FHICL_FILE_PATH ${SYSTTOOLS_ROOT}/fcl

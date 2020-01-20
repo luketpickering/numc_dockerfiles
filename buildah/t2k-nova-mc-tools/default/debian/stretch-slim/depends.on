@@ -1,4 +1,4 @@
 # PKG_NAME[@Version=default][:Tag=<ROOT_IMAGE_TAG>] ROOT_IMAGE_NAME[:Tag=latest]
 t2kreweight debian:stretch-slim
 novarwgt debian:stretch-slim
-editbox debian:stretch-slim
+devbox debian:stretch-slim

@@ -21,8 +21,8 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   # CERNLIB expects gmake to exit
   buildah run ${BUILD} ln -s /usr/bin/make /usr/bin/gmake
 
-  bb_cont_mkdir_cd /opt/${NAME}-src
-  buildah run ${BUILD} git clone -c http.sslVerify=false \
+  bb_cont_mkdir_cd ${BUILD} /opt/${NAME}-src
+  buildah run ${BUILD} git clone  \
                 https://github.com/luketpickering/cernlibgcc5-.git
   bb_cont_cd ${BUILD} /opt/${NAME}-src/cernlibgcc5-
 

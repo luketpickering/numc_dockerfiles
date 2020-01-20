@@ -7,7 +7,6 @@ if [ -z $BB_SCRIPT_DIR ]; then
   exit 1
 fi
 source $BB_SCRIPT_DIR/buildah.funcs
-GIT_TAG=R-${BB_PKG_VERS}
 COMPILE_STAGE_NAME="${BB_PKG_IMAGE_FQNAME}_build"
 NAME="${BB_PKG_NAME}"
 
@@ -19,7 +18,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
   BUILD=$(bb_from_buildbox)
 
-  bb_cont_mkdir ${BUILD} /opt/${NAME}-src
+  bb_cont_mkdir_cd ${BUILD} /opt/${NAME}-src
 
   buildah run ${BUILD} wget --no-check-certificate \
           http://root.cern.ch/download/pythia6.tar.gz
