@@ -1,0 +1,16 @@
+#!/bin/bash
+set +x
+#If anything fails, we back out
+set -e
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+source $BB_SCRIPT_DIR/buildah.funcs
+
+BASE=$(bb_from_buildbox)
+
+bb_inject hepmc3 3.2.0 ${BASE}
+bb_inject cernlib 2005 ${BASE}
+
+bb_commit ${BASE}

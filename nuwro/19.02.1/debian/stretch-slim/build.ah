@@ -18,7 +18,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
   BUILD=$(bb_from_buildbox)
 
-  bb_inject root v6-12-06_min ${BUILD}
+  bb_inject root v6-12-06 ${BUILD}
   bb_inject pythia 6.4.28 ${BUILD}
 
   bb_cont_mkdir_cd ${BUILD} /opt/${NAME}-src
@@ -49,7 +49,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
 fi
 
-BASE=$(bb_from_runbox_min)
+BASE=$(bb_from_runbox)
 
 bb_consume_target ${NAME} ${BB_PKG_VERS} \
   $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}

@@ -21,14 +21,15 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   bb_cont_mkdir_cd ${BUILD} /opt/${NAME}-src
 
   buildah run ${BUILD} wget --no-check-certificate \
-                          https://lhapdf.hepforge.org/downloads/?f=lhapdf-${BB_PKG_VERS}.tar.gz \
+                          https://lhapdf.hepforge.org/downloads/?f=old/lhapdf-${BB_PKG_VERS}.tar.gz \
                           -O lhapdf-${BB_PKG_VERS}.tar.gz
 
   buildah run ${BUILD} tar -zxvf lhapdf-${BB_PKG_VERS}.tar.gz
 
   bb_cont_mkdir_cd ${BUILD} /opt/${NAME}-build
 
-
+  #Legacy disables a bounds-checking warning -> error
+  bb_cont_set_env ${BUILD} FCFLAGS "-std=legacy"
   buildah run ${BUILD} /opt/${NAME}-src/lhapdf-${BB_PKG_VERS}/configure \
                                       --prefix=/opt/lhapdf/${BB_PKG_VERS} \
                                       --disable-old-ccwrap \
@@ -41,7 +42,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
 fi
 
-BASE=$(bb_from_runbox_min)
+BASE=$(bb_from_runbox)
 
 bb_consume_target ${NAME} ${BB_PKG_VERS} \
   $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}

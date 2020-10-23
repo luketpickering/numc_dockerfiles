@@ -19,7 +19,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   BUILD=$(bb_from_buildbox)
 
   bb_inject niwgreweight v1r23p2 ${BUILD}
-  bb_inject neut 5.3.3 ${BUILD}
+  bb_inject neut 5.3.3_maqefix ${BUILD}
 
   # T2KReWeight src is not freely available, must take a copy of a local repository
   bb_cont_mkdir ${BUILD} /opt/${NAME}-src
@@ -35,9 +35,9 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   CERN_LEVEL=$(bb_cont_get_env ${BUILD} CERN_LEVEL)
 
   DEBUG_ARG=""
-  if bb_is_debug_build; then
+  # if bb_is_debug_build; then
     DEBUG_ARG="--enable-debug"
-  fi
+  # fi
 
   buildah run ${BUILD} ./configure \
                       --enable-neut \
@@ -64,7 +64,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
 fi
 
-BASE=$(bb_from_runbox_min)
+BASE=$(bb_from_runbox)
 
 bb_consume_target ${NAME} ${BB_PKG_VERS} \
   $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}

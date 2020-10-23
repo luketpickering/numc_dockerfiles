@@ -1,0 +1,72 @@
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+source $BB_SCRIPT_DIR/buildah.funcs
+COMPILE_STAGE_NAME="${BB_PKG_IMAGE_FQNAME}_build"
+NAME=${BB_PKG_NAME}
+
+if [ -z ${N_CORE} ]; then
+    N_CORE=4
+fi
+
+if ! podman image exists ${COMPILE_STAGE_NAME}; then
+
+  BUILD=$(bb_from_buildbox)
+
+  bb_inject niwgreweight oa2020 ${BUILD}
+  bb_inject neut oa2020 ${BUILD}
+
+  # T2KReWeight src is not freely available, must take a copy of a local repository
+  bb_cont_mkdir ${BUILD} /opt/${NAME}-src
+  bb_add_from_pkg_dir ${BUILD} \
+    T2KReWeight \
+    /opt/${NAME}-src
+
+  bb_cont_cd ${BUILD} /opt/${NAME}-src
+
+  bb_cont_set_env ${BUILD} T2KREWEIGHT /opt/${NAME}-src
+
+  CERN=$(bb_cont_get_env ${BUILD} CERN)
+  CERN_LEVEL=$(bb_cont_get_env ${BUILD} CERN_LEVEL)
+
+  DEBUG_ARG=""
+  if bb_is_debug_build; then
+    DEBUG_ARG="--enable-debug"
+  fi
+
+  buildah run ${BUILD} ./configure \
+                      --enable-neut \
+                          --with-cern=${CERN}/${CERN_LEVEL} \
+                      --enable-niwg ${DEBUG_ARG}
+  buildah run ${BUILD} bash -c \
+    "ENV_CXXFLAGS=\" \$(root-config --cflags) \" make autogen-headers"
+  buildah run ${BUILD} bash -c \
+    "ENV_CXXFLAGS=\" \$(root-config --cflags) \" make make-bin-lib-dir"
+  buildah run ${BUILD} bash -c \
+    "ENV_CXXFLAGS=\" \$(root-config --cflags) \" make src"
+
+  bb_cont_mkdir ${BUILD} /opt/${NAME}/${BB_PKG_VERS}/lib \
+                         /opt/${NAME}/${BB_PKG_VERS}/include
+
+  buildah run ${BUILD} ln -s /opt/${NAME}/${BB_PKG_VERS}/include \
+                             /opt/${NAME}/${BB_PKG_VERS}/src
+  bb_cont_cp ${BUILD} "/opt/${NAME}-src/src/*.h" \
+                       /opt/${NAME}/${BB_PKG_VERS}/include/
+  bb_cont_cp ${BUILD} /opt/${NAME}-src/lib/libT2KReWeight.so\
+                      /opt/${NAME}/${BB_PKG_VERS}/lib/
+
+  bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
+
+fi
+
+BASE=$(bb_from_runbox)
+
+bb_consume_target ${NAME} ${BB_PKG_VERS} \
+  $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
+
+bb_commit ${BASE}

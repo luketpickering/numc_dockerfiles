@@ -44,6 +44,12 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   buildah run ${BUILD} make -j ${N_CORE}
   buildah run ${BUILD} make install
 
+  buildah run ${BUILD} sed -i "s:nusyst_inputs:/var/nusyst_inputs:g" /opt/nusystematics/fcl/DUNETDRv1.ParamHeaders.nocvmfs.fcl
+  buildah run ${BUILD} sed -i "s:nusyst_inputs:/var/nusyst_inputs:g" /opt/nusystematics/fcl/DUNETDRv1.CVOnly.ParamHeaders.nocvmfs.fcl
+
+  NUSYST_INPUTS="/var/nusyst_inputs"
+  bb_add_from_pkg_dir ${BUILD} nusyst_inputs ${NUSYST_INPUTS}
+
   bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
 
 fi

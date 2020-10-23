@@ -19,7 +19,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   BUILD=$(bb_from_buildbox)
 
   bb_inject neut 5.4.0 ${BUILD}
-  bb_inject genie 3_00_06 ${BUILD}
+#  bb_inject genie 3_00_06 ${BUILD}
 
   bb_cont_mkdir_cd ${BUILD} /opt/nuisance-src
 
@@ -29,7 +29,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   bb_cont_mkdir_cd ${BUILD} /opt/nuisance-build
   buildah run ${BUILD} cmake /opt/nuisance-src/nuisance \
             -DCMAKE_INSTALL_PREFIX=/opt/nuisance \
-            -DUSE_NEUT=ON -DUSE_GENIE=ON -DNO_EXPERIMENTS=0\
+            -DUSE_NEUT=ON -DUSE_GENIE=OFF -DNO_EXPERIMENTS=0\
             -DUSE_REWEIGHT=OFF \
             -DCMAKE_BUILD_TYPE=RELEASE
   buildah run ${BUILD} make -j ${N_CORE}

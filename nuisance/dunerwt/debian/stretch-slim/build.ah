@@ -48,4 +48,9 @@ BASE=$(bb_from_devbox)
 bb_consume_target ${NAME} ${BB_PKG_VERS} \
   $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
 
+NUSIANCEDUNERWT_SCRIPTS="/var/nuisance_dunerwt/scripts"
+bb_add_from_pkg_dir ${BASE} sigmaenuscripts ${NUSIANCEDUNERWT_SCRIPTS}
+buildah run ${BASE} find ${NUSIANCEDUNERWT_SCRIPTS} -name "*.sh" -exec chmod +x \{} \;
+bb_add_to_path_env ${BASE} PATH ${NUSIANCEDUNERWT_SCRIPTS}
+
 bb_commit ${BASE}

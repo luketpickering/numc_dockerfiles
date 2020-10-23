@@ -19,7 +19,15 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   BUILD=$(bb_from_buildbox)
 
   # CERNLIB expects gmake to exit
-  buildah run ${BUILD} ln -s /usr/bin/make /usr/bin/gmake
+
+  set +e
+  buildah run ${BUILD} test -e /usr/bin/gmake
+  GMAKE_MISSING=$?
+  set -e
+
+  if [ "${GMAKE_MISSING}" == "1" ]; then 
+    buildah run ${BUILD} ln -s /usr/bin/make /usr/bin/gmake
+  fi
 
   bb_cont_mkdir_cd ${BUILD} /opt/${NAME}-src
   buildah run ${BUILD} git clone  \
@@ -38,7 +46,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
 fi
 
-BASE=$(bb_from_runbox_min)
+BASE=$(bb_from_runbox)
 
 bb_consume_target ${NAME} ${BB_PKG_VERS} \
   $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}

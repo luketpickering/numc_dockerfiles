@@ -31,6 +31,14 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   buildah run ${BUILD} rm pythia6/pythia6416.f
   bb_cont_cd ${BUILD} /opt/${NAME}-src/pythia6
 
+
+  # Fix ODR violation that only seems to turn up in recent gcc.
+  buildah run ${BUILD}  sed -i "s/int /extern int /g" pythia6_common_address.c
+  buildah run ${BUILD}  sed -i "s/char /extern char /g" pythia6_common_address.c
+
+  # but put this one back as it doesn't actually exist...
+  buildah run ${BUILD}  sed -i "s/extern int pyuppr/int pyuppr/g" pythia6_common_address.c
+
   buildah run ${BUILD} bash makePythia6.linuxx8664
 
   bb_cont_mkdir ${BUILD} /opt/${NAME}/${BB_PKG_VERS}
@@ -45,7 +53,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
 fi
 
-BASE=$(bb_from_runbox_min)
+BASE=$(bb_from_runbox)
 
 bb_consume_target ${NAME} ${BB_PKG_VERS} \
   $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}

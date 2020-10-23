@@ -42,7 +42,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   bb_add_from_pkg_dir ${BUILD} gxspl-min.xml.gz /var/genie/xsec/DefaultPlusValenciaMEC/
 
   bb_inject lhapdf 5.9.1 ${BUILD}
-  bb_inject root v6-12-06_min ${BUILD}
+  bb_inject root v6-12-06 ${BUILD}
 
   bb_cont_set_env ${BUILD} GENIE /opt/${NAME}-src/Generator
 
@@ -97,7 +97,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
 fi
 
-BASE=$(bb_from_runbox_min)
+BASE=$(bb_from_runbox)
 
 bb_consume_target ${NAME} ${BB_PKG_VERS} \
   $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}

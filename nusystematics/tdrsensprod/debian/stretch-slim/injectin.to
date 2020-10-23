@@ -22,3 +22,7 @@ bb_cont_set_env ${TO} NUSYST_ROOT ${NUSYST_ROOT}
 bb_add_to_path_env ${TO} PATH ${NUSYST_ROOT}/bin
 bb_add_to_path_env ${TO} LD_LIBRARY_PATH ${NUSYST_ROOT}/lib
 bb_add_to_path_env ${TO} FHICL_FILE_PATH ${NUSYST_ROOT}/fcl
+
+NUSYST_INPUTS="/var/nusyst_inputs"
+bb_cont_to_cont_copy ${FROM} ${TO} ${NUSYST_INPUTS} ${NUSYST_INPUTS}
+bb_cont_set_env ${TO} NUSYST_INPUTS ${NUSYST_INPUTS}

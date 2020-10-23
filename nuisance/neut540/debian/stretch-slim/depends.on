@@ -1,4 +1,4 @@
 # PKG_NAME[@Version=default][:Tag=<ROOT_IMAGE_TAG>] ROOT_IMAGE_NAME[:Tag=latest]
 neut@5.4.0 debian:stretch-slim
 devbox debian:stretch-slim
-genie@3_00_06 debian:stretch-slim
+# genie@3_00_06 debian:stretch-slim

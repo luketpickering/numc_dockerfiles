@@ -1,0 +1,43 @@
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+
+FROM=$1
+TO=$2
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/buildah.funcs
+
+bb_mv_build_target ${FROM} ${TO} lhapdf 5.9.1
+bb_mv_build_target ${FROM} ${TO} root v6-22-02
+
+bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME} /opt/${BB_INJ_NAME}
+bb_cont_to_cont_copy ${FROM} ${TO} /var/${BB_INJ_NAME} /var/${BB_INJ_NAME}
+if bb_is_debug_build; then
+  bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME}-src \
+                                     /opt/${BB_INJ_NAME}-src
+
+fi
+
+GENIE="/opt/${BB_INJ_NAME}/${BB_INJ_VERS}"
+bb_cont_set_env ${TO} GENIE ${GENIE}
+bb_cont_set_env ${TO} GENIE_REWEIGHT ${GENIE}
+bb_add_to_path_env ${TO} PATH ${GENIE}/bin
+bb_add_to_path_env ${TO} LD_LIBRARY_PATH ${GENIE}/lib
+bb_add_to_path_env ${TO} ROOT_INCLUDE_PATH ${GENIE}/include/GENIE
+
+GENIE_XSEC_DIR="/var/genie/xsec"
+bb_cont_set_env ${TO} GENIE_XSEC_TUNE N18_10j_02_11a
+bb_cont_set_env ${TO} GENIE_XSEC_DIR ${GENIE_XSEC_DIR}
+bb_cont_set_env ${TO} GENIE_XSEC_FILE "${GENIE_XSEC_DIR}/gxspl-nuisance.min.xml.gz"
+
+GENIE_PHYOPT_DIR="/var/genie/phyopt"
+bb_cont_set_env ${TO} GENIE_PHYOPT_DIR ${GENIE_PHYOPT_DIR}
+
+bb_add_to_path_env ${TO} GXMLPATH ${GENIE_XSEC_DIR}
+bb_add_to_path_env ${TO} GXMLPATH ${GENIE_PHYOPT_DIR}

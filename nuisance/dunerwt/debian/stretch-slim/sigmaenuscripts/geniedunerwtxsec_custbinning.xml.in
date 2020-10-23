@@ -1,0 +1,8 @@
+<nuisance>
+	
+  <DUNERwt ConfigFHiCL="__CONFIG_FCL__" />
+
+  <parameter type="nusyst_parameter" name="NuSystCVResponse" nominal="1" />
+
+  <sample name="SigmaEnuPerEHists" input="GENIE:__IFILE__" NBins="__NBINS__" MinEnuGev="__LOWBIN__" MaxEnuGev="__UPBIN__" UseLogE="__ISLOGE__" />
+</nuisance>

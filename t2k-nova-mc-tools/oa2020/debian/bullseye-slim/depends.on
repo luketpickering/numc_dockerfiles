@@ -1,0 +1,4 @@
+# PKG_NAME[@Version=default][:Tag=<ROOT_IMAGE_TAG>] ROOT_IMAGE_NAME[:Tag=latest]
+t2kreweight@oa2020 $ENV$
+novarwgt@v2.0-dev16 $ENV$
+devbox $ENV$

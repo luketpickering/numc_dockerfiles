@@ -1,0 +1,53 @@
+#!/bin/bash
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+source $BB_SCRIPT_DIR/buildah.funcs
+COMPILE_STAGE_NAME="${BB_PKG_IMAGE_FQNAME}_build"
+NAME="${BB_PKG_NAME}"
+
+if [ -z ${N_CORE} ]; then
+    N_CORE=4
+fi
+
+if ! podman image exists ${COMPILE_STAGE_NAME}; then
+
+  BUILD=$(bb_from_buildbox)
+
+  bb_inject root v6-12-06 ${BUILD}
+
+  bb_cont_mkdir_cd ${BUILD} /opt/GiBUU-t2k-dev-src
+  buildah run ${BUILD} git clone  \
+              https://github.com/luketpickering/GiBUU-t2k-dev.git
+  bb_cont_cd ${BUILD} /opt/GiBUU-t2k-dev-src/GiBUU-t2k-dev
+
+  BUILD_TYPE="RELEASE"
+  if bb_is_debug_build; then
+    BUILD_TYPE="DEBUG"
+  fi
+
+  bb_cont_mkdir_cd ${BUILD} /opt/GiBUU-t2k-dev-build
+  buildah run ${BUILD} cmake /opt/GiBUU-t2k-dev-src/GiBUU-t2k-dev\
+          -DCMAKE_INSTALL_PREFIX=/opt/GiBUU-t2k-dev/${BB_PKG_VERS} \
+          -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+  buildah run ${BUILD} make -j ${N_CORE}
+  buildah run ${BUILD} make install
+
+  bb_cont_mkdir ${BUILD} -p /opt/GiBUU-t2k-dev/
+  buildah run ${BUILD} mv /opt/GiBUU-t2k-dev-build/Linux /opt/GiBUU-t2k-dev/${BB_PKG_VERS}
+
+  bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
+
+fi
+
+BASE=$(bb_from_runbox)
+
+bb_consume_target ${NAME} ${BB_PKG_VERS} \
+  $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
+
+bb_commit ${BASE}

@@ -20,21 +20,26 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   BUILD=$(bb_from_buildbox)
 
   bb_inject cernlib 2005 ${BUILD}
-  bb_inject root v6-12-06_min ${BUILD}
+  bb_inject root v6-12-06 ${BUILD}
 
   # NEUT src is not freely available, must take a copy of a local repository
   bb_cont_mkdir ${BUILD} /opt/${NAME}/${BB_PKG_VERS}
   bb_add_from_pkg_dir ${BUILD} \
-    neut_5.3.3_maqefix_t2krw_v1r27p3.tar.gz \
+    neut_5.3.3_Autumn2016 \
     /opt/${NAME}/${BB_PKG_VERS}
 
   bb_cont_set_env ${BUILD} NEUT_ROOT /opt/${NAME}/${BB_PKG_VERS}
+  bb_cont_set_env ${BUILD} SOMEWHERE /opt/${NAME}/${BB_PKG_VERS}/src
   bb_cont_set_env ${BUILD} FC gfortran
 
   bb_cont_cd ${BUILD} /opt/${NAME}/${BB_PKG_VERS}/src/neutsmpl
 
-  # Fix no-pie on neutroot2
+  # Add -lstdc++ to the build
+  buildah run ${BUILD} sed -i 's:LIBS      = $(ROOTLIBS) ${MCLIB} ${CLIBS}:LIBS      = $(ROOTLIBS) ${MCLIB} ${CLIBS} -lstdc++:g' GNUmakefile.neutroot
+  # Fix no-pie directives
   buildah run ${BUILD} sed -i "s/neutroot.o -Xlinker/neutroot.o -fno-pie -fno-PIE -no-pie -Xlinker/" GNUmakefile.neutroot
+  buildah run ${BUILD} sed -i "s/FC g77/FC gfortran/g" EnvMakeneutsmpl.csh
+  buildah run ${BUILD} sed -i "s:/csh:/tcsh:g" Cleanneutsmpl.csh EnvMakeneutsmpl.csh Makeneutsmpl.csh
 
   buildah run ${BUILD} ./Makeneutsmpl.csh
 
@@ -78,11 +83,18 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
                          /opt/${NAME}-src/src/neutsmpl/Cards \
                          /var/${NAME}/${BB_PKG_VERS}/
 
+  bb_add_from_pkg_dir ${BUILD} \
+      neut_scripts \
+      /var/neut_scripts
+
+  buildah run ${BUILD} sed -i "s:__NEUT_VERSION__:${BB_PKG_VERS}:g" \
+  /var/neut_scripts/ana/neutsummarytree.C
+
   bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
 
 fi
 
-BASE=$(bb_from_runbox_min)
+BASE=$(bb_from_runbox)
 
 bb_consume_target ${NAME} ${BB_PKG_VERS} \
   $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}

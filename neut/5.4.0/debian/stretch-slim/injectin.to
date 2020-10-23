@@ -33,5 +33,9 @@ bb_cont_mkdir ${TO} /opt/${BB_INJ_NAME}-src/src/
 buildah run ${TO} ln -s /opt/${BB_INJ_NAME}/${BB_INJ_VERS}/include \
                         /opt/${BB_INJ_NAME}-src/src/neutclass
 
+bb_cont_to_cont_copy ${FROM} ${TO} /var/neut_scripts /var/neut_scripts
+bb_add_to_path_env ${TO} PATH /var/neut_scripts/gen
+bb_add_to_path_env ${TO} PATH /var/neut_scripts/ana
+
 bb_cont_set_env ${TO} NEUT_CRSPATH /opt/${BB_INJ_NAME}/${BB_INJ_VERS}/share/neut/crsdat
 bb_cont_set_env ${TO} NEUT_CARDS /opt/${BB_INJ_NAME}/${BB_INJ_VERS}/share/neut/Cards

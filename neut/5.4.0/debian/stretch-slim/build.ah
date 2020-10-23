@@ -39,6 +39,13 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   buildah run ${BUILD} make -j ${N_CORE}
   buildah run ${BUILD} make install
 
+  bb_add_from_pkg_dir ${BUILD} \
+      neut_scripts \
+      /var/neut_scripts
+
+  buildah run ${BUILD} sed -i "s:__NEUT_VERSION__:${BB_PKG_VERS}:g" \
+  /var/neut_scripts/ana/neutsummarytree.C
+
   bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
 
 fi
