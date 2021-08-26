@@ -64,8 +64,8 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   bb_cont_mkdir ${BUILD} /var/${NAME}/phyopt/
   bb_add_from_pkg_dir ${BUILD} dkcharmtau-resfix /var/${NAME}/phyopt/
 
-  bb_inject lhapdf 5.9.1 ${BUILD}
-  bb_inject root v6-22-02 ${BUILD}
+  bb_inject lhapdf default ${BUILD}
+  bb_inject root default ${BUILD}
 
   bb_cont_set_env ${BUILD} GENIE /opt/${NAME}-src/Generator
 
@@ -79,7 +79,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   buildah run ${BUILD} git checkout ${GIT_TAG}
 
   DEBUG_ARG=""
-  if bb_is_debug_build; then
+  if bb_is_debug_build || [ ${BB_OVERRIDE_BUILD_TYPE} == "DEBUG" ]; then
     DEBUG_ARG="--enable-debug"
   fi
 
@@ -130,9 +130,10 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
 fi
 
-BASE=$(bb_from_runbox)
+BASE=$(bb_from_base ${BB_PKG_NAME} ${BB_PKG_VERS} $(bb_get_runbox ${BB_PKG_ROOT_IT}))
 
 bb_consume_target ${NAME} ${BB_PKG_VERS} \
   $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
 
 bb_commit ${BASE}
+

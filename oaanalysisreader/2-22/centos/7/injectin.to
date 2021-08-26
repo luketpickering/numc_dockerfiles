@@ -1,0 +1,36 @@
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+set -x
+
+FROM=$1
+TO=$2
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/buildah.funcs
+
+ND280_ROOT=$(bb_cont_get_env ${FROM} ND280_ROOT)
+
+if [ $(bb_cont_path_exists ${TO} ${ND280_ROOT}/oaAnalysisReader) == "0" ]; then 
+  exit 0
+fi
+
+bb_mv_build_target ${FROM} ${TO} psyche 3-61
+
+OAANALYSISREADERROOT=$(bb_cont_get_env ${FROM} OAANALYSISREADERROOT)
+OAANALYSISREADERCONFIG=$(bb_cont_get_env ${FROM} OAANALYSISREADERCONFIG)
+bb_cont_set_env ${TO} OAANALYSISREADERROOT ${OAANALYSISREADERROOT}
+bb_cont_set_env ${TO} OAANALYSISREADERCONFIG ${OAANALYSISREADERCONFIG}
+
+bb_cont_mkdir ${TO} ${OAANALYSISREADERROOT}
+bb_cont_mkdir ${TO} ${OAANALYSISREADERROOT}/${OAANALYSISREADERCONFIG}
+
+bb_cont_to_cont_copy ${FROM} ${TO} ${OAANALYSISREADERROOT}/inc ${OAANALYSISREADERROOT}/inc
+bb_cont_to_cont_copy ${FROM} ${TO} ${OAANALYSISREADERROOT}/${OAANALYSISREADERCONFIG}/lib ${OAANALYSISREADERROOT}/${OAANALYSISREADERCONFIG}/lib
+
+bb_add_to_path_env ${TO} LD_LIBRARY_PATH ${OAANALYSISREADERROOT}/${OAANALYSISREADERCONFIG}/lib

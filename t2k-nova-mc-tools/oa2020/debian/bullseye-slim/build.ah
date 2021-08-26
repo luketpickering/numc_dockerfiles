@@ -26,7 +26,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
               https://github.com/NUISANCEMC/nuisance.git
 
   BUILD_TYPE="RELEASE"
-  if bb_is_debug_build; then
+  if bb_is_debug_build || [ ${BB_OVERRIDE_BUILD_TYPE} == "DEBUG" ]; then
     BUILD_TYPE="DEBUG"
   fi
 
@@ -44,7 +44,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
 fi
 
-BASE=$(bb_from_devbox)
+BASE=$(bb_from_base ${BB_PKG_NAME} ${BB_PKG_VERS} $(bb_get_runbox ${BB_PKG_ROOT_IT}))
 
 bb_consume_target ${NAME} ${BB_PKG_VERS} \
   $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}

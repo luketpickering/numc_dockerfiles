@@ -1,0 +1,4 @@
+# PKG_NAME[@Version=default][:Tag=<ROOT_IMAGE_TAG>] ROOT_IMAGE_NAME[:Tag=latest]
+niwgreweight@oa2021_r5                 $ENV$
+!geantreweight@oa2021_r5 $ENV$
+oaanalysisreader@2-22 $ENV$

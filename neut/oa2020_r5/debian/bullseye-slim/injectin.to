@@ -1,0 +1,44 @@
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+set -x
+
+FROM=$1
+TO=$2
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/buildah.funcs
+
+if [ $(bb_cont_path_exists ${TO} /opt/${BB_INJ_NAME}) == "0" ]; then 
+  exit 0
+fi
+
+bb_mv_build_target ${FROM} ${TO} cernlib default
+bb_mv_build_target ${FROM} ${TO} root v5-34-38
+
+bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME} /opt/${BB_INJ_NAME}
+
+NEUT="/opt/${BB_INJ_NAME}/${BB_INJ_VERS}"
+
+bb_cont_set_env ${TO} NEUT ${NEUT}
+bb_add_to_path_env ${TO} PATH ${NEUT}/bin
+bb_add_to_path_env ${TO} LD_LIBRARY_PATH ${NEUT}/lib
+bb_add_to_path_env ${TO} ROOT_INCLUDE_PATH \
+  ${NEUT}/include:${NEUT}/src/neutclass
+
+#ROOT Needs this to find the headers unfortunately
+if ! bb_is_debug_build; then
+	bb_cont_mkdir ${TO} ${NEUT}/src/neutclass
+	if [ $(bb_cont_path_exists ${TO} ${NEUT}/src/neutclass) != "0" ]; then 
+		buildah run ${TO} ln -s ${NEUT}/include \
+		                        ${NEUT}/src/neutclass
+    fi
+fi
+
+bb_cont_set_env ${TO} NEUT_CRSPATH ${NEUT}/share/neut/crsdat
+bb_cont_set_env ${TO} NEUT_CARDS ${NEUT}/share/neut/Cards

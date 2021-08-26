@@ -1,0 +1,105 @@
+#!/bin/bash
+
+set -x
+
+#If anything fails, we back out
+set -e
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+source $BB_SCRIPT_DIR/buildah.funcs
+COMPILE_STAGE_NAME="${BB_PKG_IMAGE_FQNAME}_build"
+NAME=${BB_PKG_NAME}
+
+if ! podman image exists ${COMPILE_STAGE_NAME}; then
+
+  BUILD=$(bb_from_buildbox)
+
+  bb_inject root v5-34-38 ${BUILD}
+
+  bb_cont_mkdir ${BUILD} /root/.ssh
+  buildah run ${BUILD} bash -c "ssh-keyscan -H repo.nd280.org >> ~/.ssh/known_hosts" 
+  bb_cont_set_env ${BUILD} CVSROOT :ext:anoncvs@repo.nd280.org:/home/trt2kmgr/ND280Repository
+  bb_cont_set_env ${BUILD} CVS_RSH ssh
+
+  bb_cont_mkdir_cd ${BUILD} /opt/
+
+  buildah run ${BUILD} cvs co CMT
+  bb_cont_cd ${BUILD} /opt/CMT
+
+  buildah run ${BUILD} ./install_cmt
+
+  CMTCONFIG="Linux-x86_64"
+  bb_cont_set_env ${BUILD} ${CMTCONFIG}
+  CMTFULLPATH=$(buildah run ${BUILD} bash -c "readlink -f /opt/CMT/*/Linux-x86_64")
+  CMTROOT=${CMTFULLPATH%%/Linux-x86_64}
+  bb_cont_set_env ${BUILD} CMTROOT ${CMTROOT}
+  bb_cont_set_env ${BUILD} CMTBIN "Linux-x86_64"
+  bb_cont_set_env ${BUILD} CMTPATH /opt/
+  bb_add_to_path_env ${BUILD} PATH ${CMTFULLPATH}
+
+  bb_cont_cd ${BUILD} /opt/
+
+  buildah run ${BUILD} cmt co -r ${BB_PKG_VERS} -R nd280Psyche
+
+  for psyche_pkg in psycheCore\
+                    psycheIO\
+                    psychePolicy\
+                    psycheSelections\
+                    psycheSystematics\
+                    psycheEventModel\
+                    psycheND280Utils\
+                    psycheROOT\
+                    psycheSteering\
+                    psycheUtils; do
+
+    psyche_pkg_vers=$(buildah run ${BUILD} bash -c "grep ${psyche_pkg} /opt/nd280Psyche/${BB_PKG_VERS}/cmt/requirements | sed -e \"s|.*\(v[0-9]r[0-9]\?[0-9]\?p\?[0-9]\?[0-9]\?\).*|\1|g\"")
+    echo "$psyche_pkg version: $psyche_pkg_vers"
+    bb_cont_set_env ${BUILD} ${psyche_pkg^^}VERSION ${psyche_pkg_vers}
+    bb_cont_set_env ${BUILD} ${psyche_pkg^^}CONFIG CMTCONFIG
+    bb_cont_set_env ${BUILD} ${psyche_pkg^^}ROOT /opt/psyche/${psyche_pkg}/${psyche_pkg_vers}
+
+    bb_add_to_path_env ${BUILD} PATH /opt/psyche/${psyche_pkg}/${psyche_pkg_vers}/${CMTCONFIG}
+    bb_add_to_path_env ${BUILD} LD_LIBRARY_PATH /opt/psyche/${psyche_pkg}/${psyche_pkg_vers}/${CMTCONFIG}
+    unset psyche_pkg_vers
+  done
+
+  PSYCHECOREVERSION=$(bb_cont_get_env ${BUILD} PSYCHECOREVERSION)
+  PSYCHESTEERINGVERSION=$(bb_cont_get_env ${BUILD} PSYCHESTEERINGVERSION)
+  PSYCHEND280UTILSVERSION=$(bb_cont_get_env ${BUILD} PSYCHEND280UTILSVERSION)
+
+  buildah run ${BUILD} mv /opt/psyche/psycheCore/${PSYCHECOREVERSION}/cmt/requirements psyche/psycheCore/${PSYCHECOREVERSION}/cmt/requirements.old
+  buildah run ${BUILD} bash -c "cat /opt/psyche/psycheCore/${PSYCHECOREVERSION}/cmt/requirements.old | grep -v \"use ROOT\" > /opt/psyche/psycheCore/${PSYCHECOREVERSION}/cmt/requirements"
+  buildah run ${BUILD} bash -c "echo -e \"use psycheROOT * psyche\nmake_fragment rootcint -header=rootcint_header -trailer=rootcint_trailer\" >> /opt/psyche/psycheCore/${PSYCHECOREVERSION}/cmt/requirements"
+
+  bb_cont_mkdir ${BUILD} /opt/psyche/psycheCore/${PSYCHECOREVERSION}/fragments
+  bb_add_from_pkg_dir ${BUILD} \
+    fragments \
+    /opt/psyche/psycheCore/${PSYCHECOREVERSION}/fragments
+
+  buildah run ${BUILD} mv /opt/psyche/psycheSteering/${PSYCHESTEERINGVERSION}/cmt/requirements /opt/psyche/psycheSteering/${PSYCHESTEERINGVERSION}/cmt/requirements.old
+  buildah run ${BUILD} bash -c "cat /opt/psyche/psycheSteering/${PSYCHESTEERINGVERSION}/cmt/requirements.old | grep -v \"^application\" | grep -v \"^library\" > /opt/psyche/psycheSteering/${PSYCHESTEERINGVERSION}/cmt/requirements"
+  buildah run ${BUILD} bash -c "echo \"library psycheSteering AnalysisManager.cxx ToyMakerExample.cxx\" >> /opt/psyche/psycheSteering/${PSYCHESTEERINGVERSION}/cmt/requirements"
+
+  if [ "${BB_PKG_VERS}" == "v3r47" ]; then
+    bb_cont_cd ${BUILD} /opt/psyche/psycheND280Utils/${PSYCHEND280UTILSVERSION}/src/
+    buildah run ${BUILD} sed -i 's/80910020)/80910024)/g; s/80910021 \&\&/80910025 \&\&/g; s/80910079)/80910094)/g' ND280AnalysisUtils.cxx
+  fi
+
+  bb_cont_cd ${BUILD} /opt/nd280Psyche/${BB_PKG_VERS}/cmt
+  buildah run ${BUILD} chmod +x setup.sh
+  buildah run ${BUILD} bash setup.sh
+  buildah run ${BUILD} cmt broadcast cmt config
+  buildah run ${BUILD} cmt broadcast cmt make
+  
+  bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
+
+fi
+
+BASE=$(bb_from_base ${BB_PKG_NAME} ${BB_PKG_VERS} $(bb_get_runbox ${BB_PKG_ROOT_IT}))
+
+bb_consume_target ${NAME} ${BB_PKG_VERS} \
+  $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
+
+bb_commit ${BASE}

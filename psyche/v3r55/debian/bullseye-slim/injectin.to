@@ -1,0 +1,57 @@
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+set -x
+
+FROM=$1
+TO=$2
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/buildah.funcs
+
+if [ $(bb_cont_path_exists ${TO} /opt/${BB_INJ_NAME}) == "0" ]; then 
+  exit 0
+fi
+
+bb_mv_build_target ${FROM} ${TO} root v5-34-38
+
+bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME} /opt/${BB_INJ_NAME}
+bb_cont_to_cont_copy ${FROM} ${TO} /opt/nd280Psyche /opt/nd280Psyche
+bb_cont_to_cont_copy ${FROM} ${TO} /opt/CMT /opt/CMT
+
+bb_cont_mkdir ${TO} /root/.ssh
+buildah run ${TO} bash -c "ssh-keyscan -H repo.nd280.org >> ~/.ssh/known_hosts" 
+bb_cont_set_env ${TO} CVSROOT :ext:anoncvs@repo.nd280.org:/home/trt2kmgr/ND280Repository
+bb_cont_set_env ${TO} CVS_RSH ssh
+
+CMTCONFIG="Linux-x86_64"
+bb_cont_set_env ${TO} CMTCONFIG ${CMTCONFIG}
+CMTFULLPATH=$(buildah run ${TO} bash -c "readlink -f /opt/CMT/*/Linux-x86_64")
+CMTROOT=${CMTFULLPATH%%/Linux-x86_64}
+bb_cont_set_env ${TO} CMTROOT ${CMTROOT}
+bb_cont_set_env ${TO} CMTBIN "Linux-x86_64"
+bb_cont_set_env ${TO} CMTPATH /opt/
+bb_add_to_path_env ${TO} PATH ${CMTFULLPATH}
+
+PSYCHEMODULES="psycheCore|psycheIO|psychePolicy|psycheSelections|psycheSystematics|psycheEventModel|psycheND280Utils|psycheROOT|psycheSteering|psycheUtils" 
+
+bb_cont_set_env ${TO} PSYCHEMODULES ${PSYCHEMODULES}
+
+OIFS=$IFS
+IFS="|"
+for psyche_pkg in ${PSYCHEMODULES}; do
+	psyche_pkg_vers=$(buildah run ${FROM} bash -c "grep ${psyche_pkg} /opt/nd280Psyche/${BB_INJ_VERS}/cmt/requirements | sed -e \"s|.*\(v[0-9]r[0-9]\?[0-9]\?p\?[0-9]\?[0-9]\?\).*|\1|g\"")
+	bb_cont_set_env ${TO} ${psyche_pkg^^}VERSION ${psyche_pkg_vers}
+	bb_cont_set_env ${TO} ${psyche_pkg^^}CONFIG ${CMTCONFIG}
+	bb_cont_set_env ${TO} ${psyche_pkg^^}ROOT /opt/psyche/${psyche_pkg}/${psyche_pkg_vers}
+
+	bb_add_to_path_env ${TO} PATH /opt/psyche/${psyche_pkg}/${psyche_pkg_vers}/${CMTCONFIG}
+	bb_add_to_path_env ${TO} LD_LIBRARY_PATH /opt/psyche/${psyche_pkg}/${psyche_pkg_vers}/${CMTCONFIG}
+	unset psyche_pkg_vers
+done
+IFS=$OIFS

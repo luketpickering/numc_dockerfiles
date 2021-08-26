@@ -1,0 +1,92 @@
+#!/bin/bash
+
+set -x
+
+PSYCHE_ROOT_VERSION=3.10
+OAANALYSISREADER_VERSION=2.22
+
+#If anything fails, we back out
+set -e
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+source $BB_SCRIPT_DIR/buildah.funcs
+COMPILE_STAGE_NAME="${BB_PKG_IMAGE_FQNAME}_build"
+NAME=${BB_PKG_NAME}
+
+if ! podman image exists ${COMPILE_STAGE_NAME}; then
+
+  BUILD=$(bb_from_buildbox)
+
+  bb_inject psyche 3-61 ${BUILD}
+
+  ND280_ROOT=$(bb_cont_get_env ${BUILD} ND280_ROOT)
+  bb_cont_mkdir_cd ${BUILD} ${ND280_ROOT}
+
+  #Use your local credentials to try and clone
+  buildah run --volume ${HOME}/.ssh:/root/.ssh ${BUILD} git clone git@git.t2k.org:nd280/pilot/nd280SoftwarePilot.git
+  bb_cont_cd ${BUILD} ${ND280_ROOT}/nd280SoftwarePilot
+  buildah run ${BUILD} ./configure.sh
+  bb_cont_set_env ${BUILD} CMAKE_PREFIX_PATH ${ND280_ROOT}
+
+  # set up the nd280SoftwarePilot.profile
+  bb_cont_set_env ${BUILD} ND280_GIT "git@git.t2k.org:nd280/"
+  bb_cont_set_env ${BUILD} ND280_DOWNLOADS "http://nd280.lancs.ac.uk/downloads"
+  ND280PILOT_ROOT=${ND280_ROOT}
+  bb_cont_set_env ${BUILD} ND280PILOT_ROOT "${ND280PILOT_ROOT}"
+  bb_add_to_path_env ${BUILD} PATH "${ND280PILOT_ROOT}/nd280SoftwarePilot/scripts"
+
+  ND280_SYSTEM=$(buildah run ${BUILD} nd280-system)
+  bb_cont_set_env ${BUILD} ND280_SYSTEM "${ND280_SYSTEM}"
+
+  bb_cont_cd ${BUILD} ${ND280_ROOT}
+
+  buildah run --volume ${HOME}/.ssh:/root/.ssh ${BUILD} git clone git@git.t2k.org:nd280/framework/nd280SoftwarePolicy.git
+
+  buildah run --volume ${HOME}/.ssh:/root/.ssh ${BUILD} git clone git@git.t2k.org:nd280/highland2Software/psyche/psycheROOT.git psycheROOT_${PSYCHE_ROOT_VERSION}
+  bb_cont_cd ${BUILD} ${ND280_ROOT}/psycheROOT_${PSYCHE_ROOT_VERSION}
+  buildah run ${BUILD} git checkout origin/${PSYCHE_ROOT_VERSION}.x
+
+  bb_cont_cd ${BUILD} ${ND280_ROOT}
+
+  buildah run --volume ${HOME}/.ssh:/root/.ssh ${BUILD} git clone git@git.t2k.org:nd280/highland2Software/highland2/oaAnalysisReader.git oaAnalysisReader_${OAANALYSISREADER_VERSION}
+  bb_cont_cd ${BUILD} ${ND280_ROOT}/oaAnalysisReader_${OAANALYSISREADER_VERSION}
+  buildah run ${BUILD} git checkout origin/${OAANALYSISREADER_VERSION}.x
+
+  buildah run ${BUILD} bash -c "echo \"ND280_USE(psycheROOT)\" > ${ND280_ROOT}/oaAnalysisReader_${OAANALYSISREADER_VERSION}/cmake/oaAnalysisReaderND280_USE.cmake" 
+
+  ROOTROOT=$(bb_cont_get_env ${BUILD} ROOTSYS)
+  bb_cont_set_env ${BUILD} ROOTROOT "${ROOTROOT}"
+  ND280PROD=prod6T
+  bb_cont_set_env ${BUILD} ND280PROD "${ND280PROD}"
+
+
+  OAANALYSISREADERROOT=${ND280_ROOT}/oaAnalysisReader_${OAANALYSISREADER_VERSION}
+  bb_cont_set_env ${BUILD} OAANALYSISREADERROOT "${OAANALYSISREADERROOT}"
+  bb_cont_set_env ${BUILD} OAANALYSISREADERCONFIG "${ND280_SYSTEM}"
+
+  #Watch what the rootcint script is doing
+  buildah run ${BUILD} sed -i "s:#!/bin/sh:#!/bin/bash\nset -x:g" ${OAANALYSISREADERROOT}/src/${ND280PROD}/compile_reader
+
+  bb_cont_mkdir_cd ${BUILD} ${OAANALYSISREADERROOT}/${ND280_SYSTEM}
+  buildah run ${BUILD} cmake ../cmake -Dnd280SoftwarePolicy_DIR=${ND280_ROOT}/nd280SoftwarePolicy/cmake/
+  buildah run ${BUILD} make
+  buildah run ${BUILD} mv ${OAANALYSISREADERROOT} ${OAANALYSISREADERROOT}_build
+
+  bb_cont_mkdir ${BUILD} ${OAANALYSISREADERROOT}/${ND280_SYSTEM}/
+  bb_cont_mkdir ${BUILD} ${OAANALYSISREADERROOT}/inc
+
+  buildah run ${BUILD} cp -r ${OAANALYSISREADERROOT}_build/${ND280_SYSTEM}/lib ${OAANALYSISREADERROOT}/${ND280_SYSTEM}/
+  buildah run ${BUILD} cp -r ${OAANALYSISREADERROOT}_build/inc/${ND280PROD} ${OAANALYSISREADERROOT}/inc/
+  
+  bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
+
+fi
+
+BASE=$(bb_from_base ${BB_PKG_NAME} ${BB_PKG_VERS} $(bb_get_runbox ${BB_PKG_ROOT_IT}))
+
+bb_consume_target ${NAME} ${BB_PKG_VERS} \
+  $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
+
+bb_commit ${BASE}

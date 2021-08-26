@@ -26,7 +26,7 @@ if [ -e gntp.${RUNNUM}.ghep.root ]; then
    exit 1
 fi
 
-if [ -e NOvAND.Soup.${BEAMMODE}.prep.root ]; then
+if [ -e NOvAND.Soup.${BEAMMODE}.${RUNNUM}.prep.root ]; then
    echo "Already have file: NOvAND.Soup.${BEAMMODE}.prep.root, not overwriting."
    exit 1
 fi
@@ -46,8 +46,8 @@ if [ -e gntp.${RUNNUM}.ghep.root ]; then
    rm -f input-flux.root
    rm -f genie-mcjob-${RUNNUM}.status
 
-   mv gntp.${RUNNUM}.ghep.root NOvAND.Soup.${BEAMMODE}.prep.root
-   PrepareGENIE -i NOvAND.Soup.${BEAMMODE}.prep.root \
+   mv gntp.${RUNNUM}.ghep.root NOvAND.Soup.${BEAMMODE}.${RUNNUM}.prep.root
+   PrepareGENIE -i NOvAND.Soup.${BEAMMODE}.${RUNNUM}.prep.root \
                -f ${FLUX_FILE},${FLUX_HIST} \
                -t ${NOVASOUP}
 else

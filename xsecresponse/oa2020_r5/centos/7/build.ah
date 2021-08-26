@@ -1,0 +1,53 @@
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+source $BB_SCRIPT_DIR/buildah.funcs
+COMPILE_STAGE_NAME="${BB_PKG_IMAGE_FQNAME}_build"
+NAME=${BB_PKG_NAME}
+
+if [ -z ${N_CORE} ]; then
+    N_CORE=4
+fi
+
+if ! podman image exists ${COMPILE_STAGE_NAME}; then
+
+  BUILD=$(bb_from_buildbox)
+
+  bb_inject root v5-34-38 ${BUILD}
+
+  # XsecResponse src is not freely available, use local token to pull it
+  buildah run --volume ${HOME}/.ssh:/root/.ssh ${BUILD} \
+    git clone git@github.com:t2k-software/XsecResponse.git /opt/${NAME}-src
+
+  bb_cont_cd ${BUILD} /opt/${NAME}-src
+  buildah run ${BUILD} git checkout SK_reprodofOA2020
+
+  buildah run ${BUILD} bash -c "PWD=/opt/${NAME}-src make"
+
+  bb_cont_mkdir ${BUILD} /opt/${NAME}/${BB_PKG_VERS}/bin \
+                         /opt/${NAME}/${BB_PKG_VERS}/lib \
+                         /opt/${NAME}/${BB_PKG_VERS}/inputs
+
+
+  bb_cont_cp ${BUILD} "/opt/${NAME}-src/lib/*.so"\
+                      /opt/${NAME}/${BB_PKG_VERS}/lib/
+  bb_cont_cp ${BUILD} "/opt/${NAME}-src/bin/*"\
+                      /opt/${NAME}/${BB_PKG_VERS}/bin/
+  bb_cont_cp ${BUILD} "/opt/${NAME}-src/inputs/*.root"\
+                      /opt/${NAME}/${BB_PKG_VERS}/inputs/
+
+  bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
+
+fi
+
+BASE=$(bb_from_base ${BB_PKG_NAME} ${BB_PKG_VERS} $(bb_get_runbox ${BB_PKG_ROOT_IT}))
+
+bb_consume_target ${NAME} ${BB_PKG_VERS} \
+  $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
+
+bb_commit ${BASE}

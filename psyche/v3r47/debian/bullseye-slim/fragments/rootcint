@@ -1,0 +1,16 @@
+# -*- makefile -*-
+# 
+# A makefile fragment used by CMT to build the ROOT dictionary files.
+#
+
+$(dict)${NAME}.rootcint : $(dict)$(patsubst %_LinkDef,%_Dict,${NAME}).cxx
+	@touch $@
+
+$(dict)$(patsubst %_LinkDef,%_Dict,${NAME}).cxx : \
+    $(patsubst %_LinkDef.h,%.h*,${FULLNAME}) \
+    ${FULLNAME}
+	@echo "Generating ROOT Dictionary from " $(filter-out %~,$^)
+	@if [ ! -d $(dict) ]; then mkdir $(dict); fi ;
+	$(rootcint) -f $@ -c -p $(includes) $(cppflags) $(word 1, $(filter-out %~,$^)) $(word 2, $(filter-out %~,$^))
+
+# End of fragment.

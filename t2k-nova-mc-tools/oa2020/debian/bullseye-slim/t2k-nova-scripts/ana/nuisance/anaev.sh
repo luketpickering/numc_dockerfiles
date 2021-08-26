@@ -11,6 +11,7 @@ BRANCHNAME=""
 OUTFILE=""
 NMAX=""
 NSKIP=""
+PROBE=14
 
 while [[ ${#} -gt 0 ]]; do
 
@@ -90,7 +91,7 @@ while [[ ${#} -gt 0 ]]; do
       shift # past argument
       ;;
 
-	  -AT|--available-tunes)
+      -AT|--available-tunes)
 
       echo -e "T2K (NEUT):"
       echo -e "\tBANFF_POST_C_NU"
@@ -102,6 +103,18 @@ while [[ ${#} -gt 0 ]]; do
       echo -e "\t2020"
 
       exit 0
+      ;;
+
+      -p|--probe)
+
+      if [[ ${#} -lt 2 ]]; then
+        echo "[ERROR]: ${1} expected a value."
+        exit 1
+      fi
+
+      PROBE="$2"
+      echo "[OPT]: Using: ${2} as probe PDG"
+      shift # past argument
       ;;
 
       -d|--dial-tweak)
@@ -129,7 +142,7 @@ while [[ ${#} -gt 0 ]]; do
       ;;
 
 
-	  -?|--help)
+    -?|--help)
               # unknown option
       echo "Arguments:"
       echo -e "\tRequired:"
@@ -378,36 +391,71 @@ NEUT_CARD=""
 if [ ! -z $TUNE ]; then
 
   if [ ${GEN} == "GENIE" ]; then
-  	if [ ${TUNE} == "2020" ]; then	  	
-    	CHOSEN_TUNE=${NOvA2020[@]}
-  	else
-  		echo "Invalid NOvA Tune selected. Only \"2020\" available."
-	  	exit 1
-  	fi
+    if [ ${TUNE} == "2020" ]; then      
+      CHOSEN_TUNE=${NOvA2020[@]}
+    else
+      echo "Invalid NOvA Tune selected. Only \"2020\" available."
+      exit 1
+    fi
   fi
 
   if [ ${GEN} == "NEUT" ]; then
-     if  [ ${TUNE} == "BANFF_POST_C_NU" ]; then
-     	CHOSEN_TUNE=${BANFF_POST_C_NU[@]}
-     	NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_14_C.card"
-  	 elif [ ${TUNE} == "BANFF_POST_C_NUB" ]; then
-  	 	CHOSEN_TUNE=${BANFF_POST_C_NUB[@]}
-     	NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_-14_C.card"
-  	 elif [ ${TUNE} == "BANFF_POST_O_NU" ]; then
-  	 	CHOSEN_TUNE=${BANFF_POST_O_NU[@]}
-     	NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_14_O.card"
-  	 elif [ ${TUNE} == "BANFF_POST_O_NUB" ]; then
-  	 	CHOSEN_TUNE=${BANFF_POST_O_NUB[@]}
-     	NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_-14_O.card"
-  	 else
-	  	echo "Invalid T2K Tune selected. Try one of:"
-		echo -e "\tBANFF_POST_C_NU"
-		echo -e "\tBANFF_POST_C_NUB"
-		echo -e "\tBANFF_POST_O_NU"
-		echo -e "\tBANFF_POST_O_NUB"
-	  	exit 1
-	  fi
-	fi
+    if  [ ${TUNE} == "BANFF_POST_C_NU" ]; then
+      CHOSEN_TUNE=${BANFF_POST_C_NU[@]}
+      if [ ${PROBE} == "14" ]; then
+        NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_14_C.card"
+      elif [ ${PROBE} == "12" ]; then
+        NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_12_C.card"
+      else 
+        echo "Invalid probe: ${PROBE}, for tune: ${TUNE}"
+        exit 1
+      fi
+    elif [ ${TUNE} == "BANFF_POST_C_NUB" ]; then
+      CHOSEN_TUNE=${BANFF_POST_C_NUB[@]}
+      if [ ${PROBE} == "-14" ]; then
+        NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_-14_C.card"
+      elif [ ${PROBE} == "-12" ]; then
+        NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_-12_C.card"
+      else 
+        echo "Invalid probe: ${PROBE}, for tune: ${TUNE}"
+        exit 1
+      fi
+    elif [ ${TUNE} == "BANFF_POST_O_NU" ]; then
+      CHOSEN_TUNE=${BANFF_POST_O_NU[@]}
+      if [ ${PROBE} == "14" ]; then
+        NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_14_O.card"
+      elif [ ${PROBE} == "12" ]; then
+        NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_12_O.card"
+      else 
+        echo "Invalid probe: ${PROBE}, for tune: ${TUNE}"
+        exit 1
+      fi
+    elif [ ${TUNE} == "BANFF_POST_O_NUB" ]; then
+      CHOSEN_TUNE=${BANFF_POST_O_NUB[@]}
+      if [ ${PROBE} == "-14" ]; then
+        NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_-14_O.card"
+      elif [ ${PROBE} == "-12" ]; then
+        NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_-12_O.card"
+      else 
+        echo "Invalid probe: ${PROBE}, for tune: ${TUNE}"
+        exit 1
+      fi
+      
+    else
+      echo "Invalid T2K Tune selected. Try one of:"
+      echo -e "\tBANFF_POST_C_NU"
+      echo -e "\tBANFF_POST_C_NUB"
+      echo -e "\tBANFF_POST_O_NU"
+      echo -e "\tBANFF_POST_O_NUB"
+      exit 1
+    fi
+  
+  if [[ -z "${NEUT_CARD}" ]]; then
+    echo "[ERROR]: Failed to select NEUT card file: PROBE: ${PROBE}, TUNE: ${TUNE}."
+    exit 1
+  fi
+
+  fi
 
 fi
 
@@ -425,7 +473,7 @@ for i in ${CHOSEN_TUNE[@]}; do
   DIALTYPES[${PAR_NAME}]=${PAR_TYPE}
   DIALNAMES+=(${PAR_NAME})
 
-  IFS=${OLD_IFS}	
+  IFS=${OLD_IFS}  
 done
 
 for i in ${EXTRADIALTWEAKS[@]}; do
@@ -439,18 +487,18 @@ for i in ${EXTRADIALTWEAKS[@]}; do
   PAR_TYPE=${3}
 
   if [[ " ${DIALNAMES[@]} " =~ " ${PAR_NAME} " ]]; then
-  	DIALTWEAKS[${PAR_NAME}]=${PAR_VAL}
+    DIALTWEAKS[${PAR_NAME}]=${PAR_VAL}
   else
-  	if [ -z ${PAR_TYPE} ]; then
-  		echo "Adding new parameter: {PAR_NAME} but type is not specified, use like -d <name>,<value>,<type>."
-  		exit 1
-  	fi
-  	DIALTWEAKS[${PAR_NAME}]=${PAR_VAL}
-  	DIALTYPES[${PAR_NAME}]=${PAR_TYPE}
-  	DIALNAMES+=(${PAR_NAME})
+    if [ -z ${PAR_TYPE} ]; then
+      echo "Adding new parameter: {PAR_NAME} but type is not specified, use like -d <name>,<value>,<type>."
+      exit 1
+    fi
+    DIALTWEAKS[${PAR_NAME}]=${PAR_VAL}
+    DIALTYPES[${PAR_NAME}]=${PAR_TYPE}
+    DIALNAMES+=(${PAR_NAME})
   fi
 
-  IFS=${OLD_IFS}	
+  IFS=${OLD_IFS}  
 done
 
 #if it was sourced as . setup.sh then you can't scrub off the end... assume that
@@ -462,17 +510,17 @@ else
 fi
 
 if [ ! -z $TUNE ]; then
-	CARDNAME="T2KNOvAFlat.${GEN}.${TUNE}.card"
+  CARDNAME="T2KNOvAFlat.${GEN}.nupdg_${PROBE}.${TUNE}.card"
 else
-	CARDNAME="T2KNOvAFlat.${GEN}.Nominal.card"
+  CARDNAME="T2KNOvAFlat.${GEN}.nupdg_${PROBE}.Nominal.card"
 fi
 
 if [ -z ${OUTFILE} ]; then
-	OUTFILE=${CARDNAME}.flat.root
+  OUTFILE=${CARDNAME}.nupdg_${PROBE}.flat.root
 fi
 
 if [ -e ${OUTFILE} ]; then
-	OUTFILE=${OUTFILE%%.root}.${RANDOM}.root
+  OUTFILE=${OUTFILE%%.root}.${RANDOM}.root
 fi
 
 echo -e "<nuisance>" > ${CARDNAME}
@@ -487,7 +535,7 @@ fi
 echo -en "\t<sample name=\"T2KNOvAFlatTree\" input=\"${GEN}:${INPF}\"" >> ${CARDNAME}
 
 if [ ! -z ${BRANCHNAME} ]; then
-	echo -en " weight_friend_name=\"${BRANCHNAME}\"" >> ${CARDNAME}
+  echo -en " weight_friend_name=\"${BRANCHNAME}\"" >> ${CARDNAME}
 fi
 
 echo -e " />" >> ${CARDNAME}

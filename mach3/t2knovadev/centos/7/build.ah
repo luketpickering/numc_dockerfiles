@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -x
+
+#If anything fails, we back out
+set -e
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+source $BB_SCRIPT_DIR/buildah.funcs
+COMPILE_STAGE_NAME="${BB_PKG_IMAGE_FQNAME}_build"
+NAME=${BB_PKG_NAME}
+
+if ! podman image exists ${COMPILE_STAGE_NAME}; then
+
+  BUILD=$(bb_from_buildbox)
+
+  bb_inject root v5-34-38 ${BUILD}
+  bb_inject niwgreweight oa2020_r5 ${BUILD}
+  bb_inject psyche 3-61 ${BUILD}
+  
+  bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
+
+fi
+
+BASE=$(bb_from_base ${BB_PKG_NAME} ${BB_PKG_VERS} $(bb_get_runbox ${BB_PKG_ROOT_IT}))
+
+bb_consume_target ${NAME} ${BB_PKG_VERS} \
+  $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
+
+bb_commit ${BASE}

@@ -49,6 +49,15 @@ class T2KNOvAFlatTree : public Measurement1D {
   float W_nuc_rest;
   float x;
   float y;
+  int NFSprot;
+  int NFSneut;
+  int NFSpip;
+  int NFSpim;
+  int NFSpi0;
+  int NFSgamma;
+  int NFSlep;
+  int NFSOther;
+  float TFSprot;
   float Eav;
   float EavAlt;
   float dalphat;
@@ -124,7 +133,8 @@ public:
 
     FinaliseSampleSettings();
 
-    fScaleFactor = (PredictedEventRate("width") / double(fNEvents)) /
+    // in per 1E39 to avoid float_min problems
+    fScaleFactor = 1E39 * (PredictedEventRate("width") / double(fNEvents)) /
                    TotalIntegratedFlux("width");
 
     if (samplekey.Has("odir")) {
@@ -242,6 +252,17 @@ public:
       eventVariables->Branch("dphit", &dphit, "dphit/F");
       eventVariables->Branch("pnreco_C", &pnreco_C, "pnreco_C/F");
 
+      eventVariables->Branch("NFSprot", &NFSprot, "NFSprot/I");
+      eventVariables->Branch("NFSneut", &NFSneut, "NFSneut/I");
+      eventVariables->Branch("TFSprot", &TFSprot, "TFSprot/F");
+
+      eventVariables->Branch("NFSpip", &NFSpip, "NFSpip/I");
+      eventVariables->Branch("NFSpim", &NFSpim, "NFSpim/I");
+      eventVariables->Branch("NFSpi0", &NFSpi0, "NFSpi0/I");
+      eventVariables->Branch("NFSgamma", &NFSgamma, "NFSgamma/I");
+      eventVariables->Branch("NFSlep", &NFSlep, "NFSlep/I");
+      eventVariables->Branch("NFSOther", &NFSOther, "NFSOther/I");
+
       // Save outgoing particle vectors
       eventVariables->Branch("nfsp", &nfsp, "nfsp/I");
       eventVariables->Branch("px", px, "px[nfsp]/F");
@@ -300,7 +321,11 @@ public:
 
     // Get the incoming neutrino and outgoing lepton
     FitParticle *nu = event->GetBeamPart();
-    FitParticle *lep = event->GetHMFSMuon();
+    FitParticle *lep = event->GetHMFSAnyLeptons();
+
+    if (!lep) {
+      return;
+    }
 
     PDGnu = nu->fPID;
 
@@ -331,11 +356,13 @@ public:
     tgta = event->fTargetA;
     tgtz = event->fTargetZ;
 
-    RWWeight = event->RWWeight;
-
-    if (!lep) {
-      return;
+    if ((tgt == 1000010010) ||
+        (tgt == 2212)) { // Hack fix for proton target where needed.
+      tgta = 1;
+      tgtz = 1;
     }
+
+    RWWeight = event->RWWeight;
 
     PDGLep = lep->fPID;
     ELep = lep->fP.E() / 1E3;
@@ -388,11 +415,36 @@ public:
     for (UInt_t i = 0; i < event->Npart(); ++i) {
 
       if (event->PartInfo(i)->fIsAlive &&
-          event->PartInfo(i)->Status() == kFinalState)
+          event->PartInfo(i)->Status() == kFinalState) {
         partList.push_back(event->PartInfo(i));
 
-      if (event->PartInfo(i)->IsInitialState())
+        if (event->PartInfo(i)->fPID == 2212) {
+          NFSprot++;
+          TFSprot +=
+              (event->PartInfo(i)->fP.E() - event->PartInfo(i)->fP.M()) / 1E3;
+        } else if (event->PartInfo(i)->fPID == 2112) {
+          NFSneut++;
+        } else if (event->PartInfo(i)->fPID == 211) {
+          NFSpip++;
+        } else if (event->PartInfo(i)->fPID == -211) {
+          NFSpim++;
+        } else if (event->PartInfo(i)->fPID == 111) {
+          NFSpi0++;
+        } else if (event->PartInfo(i)->fPID == 22) {
+          NFSgamma++;
+        } else if (std::find(&PhysConst::pdg_all_leptons[0],
+                             &PhysConst::pdg_all_leptons[12],
+                             event->PartInfo(i)->fPID) !=
+                   &PhysConst::pdg_all_leptons[12]) {
+          NFSlep++;
+        } else {
+          NFSOther++;
+        }
+      }
+
+      if (event->PartInfo(i)->IsInitialState()) {
         initList.push_back(event->PartInfo(i));
+      }
     }
 
     // Save outgoing particle vectors
@@ -487,6 +539,16 @@ public:
     Enu_true = ELep = CosLep = Q2 = q0 = q3 = Enu_QE = Q2_QE = W_nuc_rest = x =
         y = Eav = EavAlt = -999.9;
 
+    NFSprot = 0;
+    NFSneut = 0;
+    TFSprot = 0;
+    NFSpip = 0;
+    NFSpim = 0;
+    NFSpi0 = 0;
+    NFSgamma = 0;
+    NFSlep = 0;
+    NFSOther = 0;
+
     // Other fun variables
     // MINERvA-like ones
     dalphat = dpt = dphit = pnreco_C = -999.99;
@@ -522,7 +584,7 @@ public:
     eventVariables->Write();
     Config::Get().out->Write();
     Config::Get().out->Close();
-    
+
     // I'm so sorry, some TF1 somewhere causes root to explode if you exit
     // nicely... so we will exit not nicely!
     _Exit(0);

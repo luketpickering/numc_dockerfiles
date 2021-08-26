@@ -1,0 +1,114 @@
+diff --git a/cint/cint/lib/prec_stl/list b/cint/cint/lib/prec_stl/list
+index a5fbbe86e3..897dc59359 100644
+--- a/cint/cint/lib/prec_stl/list
++++ b/cint/cint/lib/prec_stl/list
+@@ -96,10 +96,10 @@ class list {
+     iterator operator++(int a);
+     iterator& operator--();
+     iterator operator--(int a);
+-#ifndef G__APPLE_LIBCXX
++#if !defined(G__APPLE_LIBCXX) && (!defined(G__GNUC) || (G__GNUC_VER>=3004 && G__GNUC_VER<9000))
+     bool operator==(const iterator& x) ;
+ #endif
+-#if !defined(G__HPUX) && !defined(G__APPLE_LIBCXX)
++#if !defined(G__HPUX) && !defined(G__APPLE_LIBCXX) && (!defined(G__GNUC) || (G__GNUC_VER>=3004 && G__GNUC_VER<9000))
+     bool operator!=(const iterator& x) ;
+ #endif
+ #if defined(G__VISUAL) && (G__MSC_VER>=1600)
+@@ -107,7 +107,7 @@ class list {
+ 	void* _Ptr;
+ #endif
+   };
+-#ifdef G__APPLE_LIBCXX
++#if defined(G__APPLE_LIBCXX) || (defined(G__GNUC) && !(G__GNUC_VER>=3004 && G__GNUC_VER<9000))
+    friend bool operator==(const list::iterator& x,const list::iterator& y)const;
+    friend bool operator!=(const list::iterator& x,const list::iterator& y)const;
+ #endif
+diff --git a/cint/cint/lib/prec_stl/map b/cint/cint/lib/prec_stl/map
+index 49e1f74f04..0da8f87d60 100644
+--- a/cint/cint/lib/prec_stl/map
++++ b/cint/cint/lib/prec_stl/map
+@@ -115,7 +115,7 @@ class map {
+     iterator operator++(int a);
+     iterator& operator--();
+     iterator operator--(int a);
+-#if defined (G__VISUAL) || (defined(G__GNUC_VER) && G__GNUC_VER>=3004) || defined(G__INTEL_COMPILER)
++#if defined (G__VISUAL) || (defined(G__GNUC_VER) && G__GNUC_VER>=3004 && G__GNUC_VER<9000) || defined(G__INTEL_COMPILER)
+ #if !defined(G__APPLE_LIBCXX)
+     bool operator==(const iterator& x) ;
+     bool operator!=(const iterator& x) ;
+@@ -125,7 +125,7 @@ class map {
+     bool operator==(const iterator& x) ;
+ #endif
+   };
+-#if (defined(G__GNUC) && !defined(G__KCC) && !defined(G__INTEL_COMPILER)  && !(G__GNUC_VER>=3004)) || defined(G__APPLE_LIBCXX)
++#if (defined(G__GNUC) && !defined(G__KCC) && !defined(G__INTEL_COMPILER)  && !(G__GNUC_VER>=3004 && G__GNUC_VER<9000)) || defined(G__APPLE_LIBCXX)
+   friend bool operator==(const map::iterator& x ,const map::iterator& y) const;
+   friend bool operator!=(const map::iterator& x ,const map::iterator& y) const;
+ #endif
+diff --git a/cint/cint/lib/prec_stl/multimap b/cint/cint/lib/prec_stl/multimap
+index 4b442dd874..fc29da6030 100644
+--- a/cint/cint/lib/prec_stl/multimap
++++ b/cint/cint/lib/prec_stl/multimap
+@@ -112,7 +112,7 @@ class multimap {
+     iterator operator++(int a);
+     iterator& operator--();
+     iterator operator--(int a);
+-#if defined (G__VISUAL) || (defined(G__GNUC) && G__GNUC_VER>=3004)
++#if defined (G__VISUAL) || (defined(G__GNUC) && G__GNUC_VER>=3004 && G__GNUC_VER<9000)
+ #if !defined(G__APPLE_LIBCXX)
+     bool operator==(const iterator& x) ;
+     bool operator!=(const iterator& x) ;
+@@ -122,7 +122,7 @@ class multimap {
+     bool operator==(const iterator& x) ;
+ #endif
+   };
+-#if (defined(G__GNUC) && !defined (G__KCC) && !defined(G__INTEL_COMPILER) && !(G__GNUC_VER>=3004)) || defined(G__APPLE_LIBCXX)
++#if (defined(G__GNUC) && !defined (G__KCC) && !defined(G__INTEL_COMPILER) && !(G__GNUC_VER>=3004 && G__GNUC_VER<9000)) || defined(G__APPLE_LIBCXX)
+   friend bool operator==(const multimap::iterator& x ,const multimap::iterator& y) const;
+   friend bool operator!=(const multimap::iterator& x ,const multimap::iterator& y) const;
+ #endif
+diff --git a/cint/cint/lib/prec_stl/multiset b/cint/cint/lib/prec_stl/multiset
+index 250b507ded..e0a9cf0d77 100644
+--- a/cint/cint/lib/prec_stl/multiset
++++ b/cint/cint/lib/prec_stl/multiset
+@@ -105,7 +105,7 @@ class multiset {
+     iterator operator++(int a);
+     iterator& operator--();
+     iterator operator--(int a);
+-#if defined (G__VISUAL) || (defined(G__GNUC) && G__GNUC_VER>=3004)
++#if defined (G__VISUAL) || (defined(G__GNUC) && G__GNUC_VER>=3004 && G__GNUC_VER<9000)
+ #if !defined(G__APPLE_LIBCXX)
+     bool operator==(const iterator& x) ;
+     bool operator!=(const iterator& x) ;
+@@ -115,7 +115,7 @@ class multiset {
+     bool operator==(const iterator& x) ;
+ #endif
+   };
+-#if ((defined(G__GNUC) && !defined (G__KCC) && !defined(G__INTEL_COMPILER)) && !(G__GNUC_VER>=3004)) || defined(G__APPLE_LIBCXX)
++#if ((defined(G__GNUC) && !defined (G__KCC) && !defined(G__INTEL_COMPILER)) && !(G__GNUC_VER>=3004 && G__GNUC_VER<9000)) || defined(G__APPLE_LIBCXX)
+   friend bool operator==(const multiset::iterator& x ,const multiset::iterator& y) const;
+   friend bool operator!=(const multiset::iterator& x ,const multiset::iterator& y) const;
+ #endif
+diff --git a/cint/cint/lib/prec_stl/set b/cint/cint/lib/prec_stl/set
+index c1e7948bef..b3d862b7f6 100644
+--- a/cint/cint/lib/prec_stl/set
++++ b/cint/cint/lib/prec_stl/set
+@@ -105,7 +105,7 @@ class set {
+     iterator operator++(int a);
+     iterator& operator--();
+     iterator operator--(int a);
+-#if defined (G__VISUAL) || (defined(G__GNUC) && G__GNUC_VER>=3004)
++#if defined (G__VISUAL) || (defined(G__GNUC) && G__GNUC_VER>=3004 && G__GNUC_VER<9000)
+ #if !defined(G__APPLE_LIBCXX)
+     bool operator==(const iterator& x) ;
+     bool operator!=(const iterator& x) ;
+@@ -115,7 +115,7 @@ class set {
+     bool operator==(const iterator& x) ;
+ #endif
+   };
+-#if (defined(G__GNUC) && !defined(G__KCC) && !defined(G__INTEL_COMPILER) && !(G__GNUC_VER>=3004)) || defined(G__APPLE_LIBCXX)
++#if (defined(G__GNUC) && !defined(G__KCC) && !defined(G__INTEL_COMPILER) && !(G__GNUC_VER>=3004 && G__GNUC_VER<9000)) || defined(G__APPLE_LIBCXX)
+   friend bool operator==(const set::iterator& x ,const set::iterator& y) const;
+   friend bool operator!=(const set::iterator& x ,const set::iterator& y) const;
+ #endif

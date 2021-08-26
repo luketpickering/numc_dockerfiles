@@ -1,0 +1,59 @@
+#!/bin/bash
+
+set -x
+
+#If anything fails, we back out
+set -e
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+source $BB_SCRIPT_DIR/buildah.funcs
+COMPILE_STAGE_NAME="${BB_PKG_IMAGE_FQNAME}_build"
+NAME="${BB_PKG_NAME}"
+
+if [ -z ${N_CORE} ]; then
+    N_CORE=4
+fi
+
+if ! podman image exists ${COMPILE_STAGE_NAME}; then
+
+  BUILD=$(bb_from_buildbox)
+
+  bb_inject cernlib default ${BUILD}
+  bb_inject root v5-34-38 ${BUILD}
+ 
+  bb_cont_mkdir_cd ${BUILD} /opt/${NAME}
+
+  buildah run --volume ${HOME}/.ssh:/root/.ssh ${BUILD} git clone git@github.com:neut-devel/neut.git ${BB_PKG_VERS}
+  bb_cont_cd ${BUILD} /opt/${NAME}/${BB_PKG_VERS}
+  buildah run ${BUILD} git checkout origin/PreOA2021DevelopmentMerge
+  bb_cont_cd ${BUILD} /opt/${NAME}/${BB_PKG_VERS}/src
+  buildah run ${BUILD} autoreconf -i --force
+
+  bb_cont_mkdir_cd ${BUILD} /opt/${NAME}-build
+  buildah run ${BUILD} /opt/${NAME}/${BB_PKG_VERS}/src/configure \
+                       --prefix=/opt/${NAME}/${BB_PKG_VERS}-tmp \
+                       --enable-debug --enable-nucfsi
+
+  buildah run ${BUILD} make -j ${N_CORE}
+  buildah run ${BUILD} make install
+
+  if ! bb_is_debug_build; then
+    buildah run ${BUILD} bash -c "rm -r /opt/${NAME}/${BB_PKG_VERS}/*"
+  fi
+
+  buildah run ${BUILD} bash -c "mv /opt/${NAME}/${BB_PKG_VERS}-tmp/* /opt/${NAME}/${BB_PKG_VERS}/"
+  buildah run ${BUILD} bash -c "rm -r /opt/${NAME}/${BB_PKG_VERS}-tmp/"
+
+  bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
+
+fi
+
+BASE=$(bb_from_base ${BB_PKG_NAME} ${BB_PKG_VERS} $(bb_get_runbox ${BB_PKG_ROOT_IT}))
+
+bb_consume_target ${NAME} ${BB_PKG_VERS} \
+  $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
+
+bb_commit ${BASE}

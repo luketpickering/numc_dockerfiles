@@ -13,7 +13,11 @@ fi
 
 source $BB_SCRIPT_DIR/buildah.funcs
 
-bb_cont_to_cont_copy ${FROM} ${TO} /opt/pythia /opt/pythia
+if [ $(bb_cont_path_exists ${TO} /opt/${BB_INJ_NAME}) == "0" ]; then 
+  exit 0
+fi
+
+bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME} /opt/${BB_INJ_NAME}
 
 PYTHIA6="/opt/${BB_INJ_NAME}/${BB_INJ_VERS}"
 bb_cont_set_env ${TO} PYTHIA6 ${PYTHIA6}

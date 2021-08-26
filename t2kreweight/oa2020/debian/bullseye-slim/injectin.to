@@ -1,6 +1,8 @@
 #!/bin/bash
 #!/bin/bash
 
+DO_BUILD_PSYCHE_SUPPORT=0
+
 #If anything fails, we back out
 set -e
 set +x
@@ -15,19 +17,30 @@ fi
 
 source $BB_SCRIPT_DIR/buildah.funcs
 
-bb_mv_build_target ${FROM} ${TO} neut oa2020
-bb_mv_build_target ${FROM} ${TO} niwgreweight oa2020
+if [ $(bb_cont_path_exists ${TO} /opt/${BB_INJ_NAME}) == "0" ]; then 
+  exit 0
+fi
+
+bb_mv_build_target ${FROM} ${TO} niwgreweight ${BB_INJ_VERS}
+bb_mv_build_target ${FROM} ${TO} neut ${BB_INJ_VERS}
+
+if [ "${DO_BUILD_PSYCHE_SUPPORT}" == "1" ]; then
+  bb_mv_build_target ${FROM} ${TO} oaanalysisreader v2r19
+fi
 
 bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME} /opt/${BB_INJ_NAME}
-# if bb_is_debug_build; then
+
+if bb_is_debug_build; then
   bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME}-src \
                                      /opt/${BB_INJ_NAME}-src
 
-# fi
+fi
 
 T2KREWEIGHT="/opt/${BB_INJ_NAME}/${BB_INJ_VERS}"
 bb_cont_set_env ${TO} T2KREWEIGHT ${T2KREWEIGHT}
-bb_add_to_path_env ${TO} LD_LIBRARY_PATH \
-   ${T2KREWEIGHT}/lib
-bb_add_to_path_env ${TO} ROOT_INCLUDE_PATH \
-   ${T2KREWEIGHT}/src
+
+if [ "${DO_BUILD_PSYCHE_SUPPORT}" == "1" ]; then
+  bb_add_to_path_env ${TO} PATH ${T2KREWEIGHT}/bin
+fi
+
+bb_add_to_path_env ${TO} LD_LIBRARY_PATH ${T2KREWEIGHT}/lib

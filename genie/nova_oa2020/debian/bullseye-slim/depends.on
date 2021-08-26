@@ -1,3 +1,3 @@
 # PKG_NAME[@Version=default][:Tag=<ROOT_IMAGE_TAG>] ROOT_IMAGE_NAME[:Tag=latest]
-root@v6-22-02        $ENV$
+!root        $ENV$
 lhapdf                   $ENV$

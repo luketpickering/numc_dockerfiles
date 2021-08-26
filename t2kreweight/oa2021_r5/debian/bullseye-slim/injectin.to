@@ -1,0 +1,38 @@
+#!/bin/bash
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+set +x
+
+FROM=$1
+TO=$2
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/buildah.funcs
+
+if [ $(bb_cont_path_exists ${TO} /opt/${BB_INJ_NAME}) == "0" ]; then 
+  exit 0
+fi
+
+bb_mv_build_target ${FROM} ${TO} niwgreweight ${BB_INJ_VERS}
+bb_mv_build_target ${FROM} ${TO} geantreweight ${BB_INJ_VERS}
+bb_mv_build_target ${FROM} ${TO} oaanalysisreader 2-22
+
+bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME} /opt/${BB_INJ_NAME}
+
+if bb_is_debug_build; then
+  bb_cont_to_cont_copy ${FROM} ${TO} /opt/${BB_INJ_NAME}-src \
+                                     /opt/${BB_INJ_NAME}-src
+
+fi
+
+T2KREWEIGHT="/opt/${BB_INJ_NAME}/${BB_INJ_VERS}"
+bb_cont_set_env ${TO} T2KREWEIGHT ${T2KREWEIGHT}
+
+bb_add_to_path_env ${TO} PATH ${T2KREWEIGHT}/bin
+bb_add_to_path_env ${TO} LD_LIBRARY_PATH ${T2KREWEIGHT}/lib

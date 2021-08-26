@@ -34,7 +34,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
   BUILD=$(buildah from ${SRC_STAGE_NAME})
 
-  bb_inject pythia 6.4.28 ${BUILD}
+  bb_inject pythia default ${BUILD}
 
   bb_cont_cd ${BUILD} /opt/${NAME}-src
 
@@ -51,26 +51,14 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
     BUILD_TYPE="DEBUG"
   fi
 
-  if [ "${BB_PKG_VERS}" = "v6-22-02" ]; then
-    buildah run ${BUILD} cmake /opt/${NAME}-src \
-      -DCMAKE_CXX_STANDARD=17 \
-      -Dminuit2=ON \
-      -Dmathmore=ON \
-      -Dtmva=OFF -Drootfit=OFF \
-      -Dx11=$OFF -Dxft=$OFF -Dopengl=$OFF \
-      -Dminimal=ON \
-      -Dpythia6=ON -DPYTHIA6_LIBRARY=${PYTHIA6}/libPythia6.so.6.4.28 \
-      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-      -DCMAKE_INSTALL_PREFIX=/opt/${NAME}/${BB_PKG_VERS}
-  else
-    buildah run ${BUILD} cmake /opt/root-src \
-      -DCMAKE_CXX_STANDARD=17 \
-      -Dminuit2=ON \
-      -Dmathmore=ON \
-      -Dpythia6=ON -DPYTHIA6_LIBRARY=${PYTHIA6}/libPythia6.so.6.4.28 \
-      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-      -DCMAKE_INSTALL_PREFIX=/opt/${NAME}/${BB_PKG_VERS}
-  fi
+  buildah run ${BUILD} cmake /opt/root-src \
+    -DCMAKE_CXX_STANDARD=17 \
+    -Dminuit2=ON \
+    -Dmathmore=ON \
+    -Dpythia6=ON -DPYTHIA6_LIBRARY=${PYTHIA6}/libPythia6.so.6.4.28 \
+    -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+    -DCMAKE_INSTALL_PREFIX=/opt/${NAME}/${BB_PKG_VERS}
+
 
   buildah run ${BUILD} make -j ${N_CORE}
   buildah run ${BUILD} make install
@@ -86,7 +74,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
 
 fi
 
-BASE=$(bb_from_runbox)
+BASE=$(bb_from_base ${BB_PKG_NAME} ${BB_PKG_VERS} $(bb_get_runbox ${BB_PKG_ROOT_IT}))
 
 bb_consume_target ${NAME} ${BB_PKG_VERS} \
   $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}

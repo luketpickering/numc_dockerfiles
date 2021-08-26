@@ -13,7 +13,7 @@ fi
 
 source $BB_SCRIPT_DIR/buildah.funcs
 
-bb_mv_build_target ${FROM} ${TO} root v6-22-02
+bb_mv_build_target ${FROM} ${TO} root default
 
 HEPMC3_ROOT=/opt/HepMC3
 bb_cont_to_cont_copy ${FROM} ${TO} ${HEPMC3_ROOT} ${HEPMC3_ROOT}

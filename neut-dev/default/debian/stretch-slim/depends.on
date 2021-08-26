@@ -1,3 +1,0 @@
-# PKG_NAME[@Version=default][:Tag=<ROOT_IMAGE_TAG>] ROOT_IMAGE_NAME[:Tag=latest]
-hepmc3@3.2.0          $ENV$
-cernlib@2005          $ENV$

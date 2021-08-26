@@ -1,0 +1,20 @@
+#!/bin/bash
+#!/bin/bash
+
+#If anything fails, we back out
+set -e
+set +x
+
+FROM=$1
+TO=$2
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/buildah.funcs
+
+bb_mv_build_target ${FROM} ${TO} root v5-34-38
+bb_mv_build_target ${FROM} ${TO} niwgreweight oa2020_r5
+bb_mv_build_target ${FROM} ${TO} psyche 3-61

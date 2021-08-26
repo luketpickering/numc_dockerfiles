@@ -1,0 +1,101 @@
+#!/bin/bash
+
+set -x
+
+#If anything fails, we back out
+set -e
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+source $BB_SCRIPT_DIR/buildah.funcs
+COMPILE_STAGE_NAME="${BB_PKG_IMAGE_FQNAME}_build"
+NAME=${BB_PKG_NAME}
+
+PSYCHEMASTERVER=3.61
+
+if ! podman image exists ${COMPILE_STAGE_NAME}; then
+
+  BUILD=$(bb_from_buildbox)
+
+  bb_inject root v5-34-38 ${BUILD}
+
+  ND280_ROOT=/opt/nd280
+  bb_cont_mkdir_cd ${BUILD} ${ND280_ROOT}
+
+   #Use your local credentials to try and clone
+  buildah run --volume ${HOME}/.ssh:/root/.ssh ${BUILD} git clone git@git.t2k.org:nd280/pilot/nd280SoftwarePilot.git
+  bb_cont_cd ${BUILD} ${ND280_ROOT}/nd280SoftwarePilot
+  buildah run ${BUILD} git checkout stable
+  buildah run ${BUILD} ./configure.sh
+
+  # set up the nd280SoftwarePilot.profile
+  bb_cont_set_env ${BUILD} ND280_GIT "git@git.t2k.org:nd280/"
+  bb_cont_set_env ${BUILD} ND280_DOWNLOADS "http://nd280.lancs.ac.uk/downloads"
+  bb_cont_set_env ${BUILD} ND280_ROOT "${ND280_ROOT}"
+
+
+  ND280PILOT_ROOT=${ND280_ROOT}
+  bb_cont_set_env ${BUILD} ND280PILOT_ROOT "${ND280PILOT_ROOT}"
+  bb_add_to_path_env ${BUILD} PATH "${ND280PILOT_ROOT}/nd280SoftwarePilot/scripts"
+
+  bb_add_to_path_env ${BUILD} CMAKE_PREFIX_PATH ${ND280PILOT_ROOT}
+
+  ND280_SYSTEM=$(buildah run ${BUILD} nd280-system)
+  bb_cont_set_env ${BUILD} ND280_SYSTEM "${ND280_SYSTEM}"
+
+  bb_cont_cd ${BUILD} ${ND280_ROOT}
+
+  buildah run --volume ${HOME}/.ssh:/root/.ssh ${BUILD} git clone git@git.t2k.org:nd280/highland2Software/highland2SoftwarePilot.git
+  bb_cont_cd ${BUILD} ${ND280_ROOT}/highland2SoftwarePilot
+  buildah run ${BUILD} git checkout stable
+  
+  bb_add_to_path_env ${BUILD} PATH "${ND280_ROOT}/highland2SoftwarePilot/scripts"
+
+  ROOTROOT=$(bb_cont_get_env ${BUILD} ROOTSYS)
+  bb_cont_set_env ${BUILD} ROOTROOT "${ROOTROOT}"
+
+  ND280PROD=prod6T
+  bb_cont_set_env ${BUILD} ND280PROD "${ND280PROD}"
+
+  buildah run --volume ${HOME}/.ssh:/root/.ssh ${BUILD} highland-install -c -p ${ND280PROD} -d ${PSYCHEMASTERVER}
+  buildah run ${BUILD} highland_set_use_psycheROOT -r psycheROOT
+  
+  ND280SOFTWAREPOLICY_ROOT=${ND280_ROOT}/nd280SoftwarePolicy_master
+  bb_cont_set_env ${BUILD} ND280SOFTWAREPOLICY_ROOT "${ND280SOFTWAREPOLICY_ROOT}"
+
+  buildah run --volume ${HOME}/.ssh:/root/.ssh ${BUILD} highland-install -p ${ND280PROD} -d ${PSYCHEMASTERVER}
+
+  ROOT_VERSION_MAJOR=$(buildah run ${BUILD} bash -c "root-config --version | sed 's:\(.\)\..\+:\1:g'")
+  bb_cont_set_env ${BUILD} ROOT_VERSION_MAJOR "${ROOT_VERSION_MAJOR}"
+
+  for PKG in MASTER\
+            SYSTEMATICS\
+            ND280UTILS\
+            EVENTMODEL\
+            UTILS\
+            STEERING\
+            IO\
+            SELECTIONS\
+            CORE; do
+
+    PKG_ROOT=$(buildah run ${BUILD} bash -c ". /opt/nd280/psycheMaster_${PSYCHEMASTERVER}/${ND280_SYSTEM}/setup.sh &> /dev/null; printenv PSYCHE${PKG}ROOT")
+    PKG_CONFIG=$(buildah run ${BUILD} bash -c ". /opt/nd280/psycheMaster_${PSYCHEMASTERVER}/${ND280_SYSTEM}/setup.sh &> /dev/null; printenv PSYCHE${PKG}CONFIG")
+
+    bb_cont_set_env ${BUILD} PSYCHE${PKG}ROOT "${PKG_ROOT}"
+    bb_cont_set_env ${BUILD} PSYCHE${PKG}CONFIG "${PKG_CONFIG}"
+    bb_add_to_path_env ${BUILD} PSYCHE_PACKAGES PSYCHE${PKG}
+
+  done
+
+
+  bb_commit ${BUILD} ${COMPILE_STAGE_NAME}
+
+fi
+
+BASE=$(bb_from_base ${BB_PKG_NAME} ${BB_PKG_VERS} $(bb_get_runbox ${BB_PKG_ROOT_IT}))
+
+bb_consume_target ${NAME} ${BB_PKG_VERS} \
+  $(buildah from ${COMPILE_STAGE_NAME}) ${BASE}
+
+bb_commit ${BASE}

@@ -26,8 +26,8 @@ if [ -e gntp.${RUNNUM}.ghep.root ]; then
    exit 1
 fi
 
-if [ -e SK.H2O.${BEAMMODE}.prep.root ]; then
-   echo "Already have file: SK.H2O.${BEAMMODE}.prep.root, not overwriting."
+if [ -e SK.H2O.${BEAMMODE}.${RUNNUM}.prep.root ]; then
+   echo "Already have file: SKSK.H2O.${BEAMMODE}.${RUNNUM}.prep.root, not overwriting."
    exit 1
 fi
 
@@ -47,8 +47,8 @@ if [ -e gntp.${RUNNUM}.ghep.root ]; then
    rm -f input-flux.root
    rm -f genie-mcjob-${RUNNUM}.status
 
-   mv gntp.${RUNNUM}.ghep.root SK.H2O.${BEAMMODE}.prep.root
-   PrepareGENIE -i SK.H2O.${BEAMMODE}.prep.root \
+   mv gntp.${RUNNUM}.ghep.root SK.H2O.${BEAMMODE}.${RUNNUM}.prep.root
+   PrepareGENIE -i SK.H2O.${BEAMMODE}.${RUNNUM}.prep.root \
                -f ${FLUX_FILE},${FLUX_HIST} \
                -t ${H2OTARGET}
 else
