@@ -1,0 +1,49 @@
+#!/bin/bash
+
+set -e
+set -x
+
+if [ -z $BB_SCRIPT_DIR ]; then
+  echo "[ERROR]: buildahbash script running outside buildahbash environment"
+  exit 1
+fi
+
+source $BB_SCRIPT_DIR/buildah.funcs
+
+BASE=$(buildah from centos:7)
+
+BUILD_SW="gcc gcc-c++ gcc-gfortran cmake3 make autoconf automake pkgconfig libtool"
+RETREVAL_SW="git wget subversion openssh-clients openssl"
+
+X11_UTILS="xorg-x11-utils"
+X11_LIBS="libXt libXpm libXft libXext"
+
+GRAPHICS_LIBS="mesa-libGLU mesa-libGLw glew motif libpng libjpeg-turbo ftgl"
+
+DEVEL_LIBS="libxml2 gmp gsl-devel log4cpp bzip2 pcre xz zlib freetype fftw blas lapack"
+
+MISC_SW="vim nano gdb csh tcsh ed quota python patch"
+
+buildah run ${BASE} yum -y update
+buildah run ${BASE} yum -y install epel-release
+buildah run ${BASE} yum repolist
+buildah run ${BASE} yum -y install \
+        						${BUILD_SW}\
+								${RETREVAL_SW}\
+								${X11_UTILS}\
+								${X11_LIBS}\
+								${GRAPHICS_LIBS}\
+								${DEVEL_LIBS}\
+								${MISC_SW}\
+
+
+
+bb_cont_set_env ${BASE} TERM xterm-color
+
+buildah run ${BASE} sed -i "s/alias/#alias/g" /root/.bashrc
+buildah run ${BASE} sed -i "s/alias/#alias/g" /root/.cshrc
+buildah run ${BASE} sed -i "s/alias/#alias/g" /root/.tcshrc
+
+buildah run ${BASE} ln -s /usr/bin/cmake3 /usr/bin/cmake
+
+bb_commit ${BASE}

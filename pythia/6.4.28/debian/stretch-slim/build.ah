@@ -23,11 +23,10 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
   buildah run ${BUILD} wget --no-check-certificate \
           http://root.cern.ch/download/pythia6.tar.gz
   buildah run ${BUILD} wget --no-check-certificate \
-           http://www.hepforge.org/archive/pythia6/pythia-6.4.28.f.gz
+           https://pythia.org/download/pythia6/pythia6428.f
 
-  buildah run ${BUILD} gunzip pythia-6.4.28.f.gz
   buildah run ${BUILD} tar xfvz pythia6.tar.gz
-  buildah run ${BUILD} mv pythia-6.4.28.f pythia6/pythia6428.f
+  buildah run ${BUILD} mv pythia6428.f pythia6/pythia6428.f
   buildah run ${BUILD} rm pythia6/pythia6416.f
   bb_cont_cd ${BUILD} /opt/${NAME}-src/pythia6
 

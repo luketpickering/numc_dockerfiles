@@ -59,7 +59,7 @@ if ! podman image exists ${COMPILE_STAGE_NAME}; then
     cp -r genie_phyopt/v3_00_06/NULL/dkcharmtau-resfix .
     rm -r genie_phyopt dkcharmtau-resfix/ups
     #Add strange baryon decays to the genie decayer
-    sed -i "s|</param_set>|<param type=\"bool\" name=\"DecayParticleWithCode=3112\">true</param>\n<param type=\"bool\" name=\"DecayParticleWithCode=3122\">true</param>\n<param type=\"bool\" name=\"DecayParticleWithCode=-3122\">true</param>\n<param type=\"bool\" name=\"DecayParticleWithCode=3212\">true</param>\n<param type=\"bool\" name=\"DecayParticleWithCode=3222\">true</param>\n</param_set>|g" dkcharmtau-resfix/CommonDecay.xml
+    # sed -i "s|</param_set>|<param type=\"bool\" name=\"DecayParticleWithCode=3112\">true</param>\n<param type=\"bool\" name=\"DecayParticleWithCode=3122\">true</param>\n<param type=\"bool\" name=\"DecayParticleWithCode=-3122\">true</param>\n<param type=\"bool\" name=\"DecayParticleWithCode=3212\">true</param>\n<param type=\"bool\" name=\"DecayParticleWithCode=3222\">true</param>\n</param_set>|g" dkcharmtau-resfix/CommonDecay.xml
     cd -
   fi
 
