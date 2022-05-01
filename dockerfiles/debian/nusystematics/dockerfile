@@ -1,0 +1,84 @@
+# syntax=docker/dockerfile:1
+FROM picker24/genie_3_00_06:debian_bullseye-slim AS fhiclcpp_build
+WORKDIR /opt/
+
+RUN git clone https://github.com/luketpickering/linedoc.git linedoc-src
+WORKDIR /opt/linedoc-src
+RUN git checkout master
+
+RUN mkdir /opt/linedoc-build
+WORKDIR /opt/linedoc-build
+RUN cmake /opt/linedoc-src \
+            -DCMAKE_INSTALL_PREFIX=/opt/linedoc \
+            -DCMAKE_BUILD_TYPE=RELEASE
+RUN make install
+
+ENV linedoc_ROOT=/opt/linedoc
+
+WORKDIR /opt/
+
+RUN git clone https://github.com/luketpickering/fhiclcpp-simple.git fhiclcpp-src
+WORKDIR /opt/fhiclcpp-src
+RUN git checkout master
+
+RUN mkdir /opt/fhiclcpp-build
+WORKDIR /opt/fhiclcpp-build
+RUN cmake /opt/fhiclcpp-src \
+            -DCMAKE_INSTALL_PREFIX=/opt/fhiclcpp \
+            -DCMAKE_BUILD_TYPE=RELEASE
+RUN make install
+
+ENV fhiclcpp_ROOT=/opt/fhiclcpp
+
+#New stage
+FROM fhiclcpp_build AS systtools_build
+WORKDIR /opt
+
+RUN git clone https://github.com/luketpickering/systematicstools.git systematicstools-src
+WORKDIR /opt/systematicstools-src
+RUN git checkout develop_artless
+
+RUN mkdir /opt/systematicstools-build
+WORKDIR /opt/systematicstools-build
+RUN cmake /opt/systematicstools-src \
+            -DCMAKE_INSTALL_PREFIX=/opt/systematicstools \
+            -DUSEART=NO -DCMAKE_BUILD_TYPE=RELEASE
+RUN make -j 5 && make install
+
+#New stage
+FROM systtools_build AS nusyst_build
+WORKDIR /opt
+
+RUN git clone https://github.com/luketpickering/nusystematics.git nusystematics-src #blabla3
+WORKDIR /opt/nusystematics-src
+RUN git checkout develop_artless
+
+RUN mkdir /opt/nusystematics-build
+WORKDIR /opt/nusystematics-build
+RUN cmake /opt/nusystematics-src \
+            -DCMAKE_INSTALL_PREFIX=/opt/nusystematics \
+            -DUSEART=NO -DCMAKE_BUILD_TYPE=RELEASE
+RUN make -j 5 && make install
+
+RUN sed -i "s:nusyst_inputs:/var/nusyst_inputs:g" /opt/nusystematics/fcl/DUNETDRv1.ParamHeaders.nocvmfs.fcl
+RUN sed -i "s:nusyst_inputs:/var/nusyst_inputs:g" /opt/nusystematics/fcl/DUNETDRv1.CVOnly.ParamHeaders.nocvmfs.fcl
+
+ENV NUSYST_INPUTS="/var/nusyst_inputs"
+# bb_add_from_pkg_dir ${BUILD} nusyst_inputs ${NUSYST_INPUTS}
+
+#Clean stage
+FROM picker24/genie_3_00_06:debian_bullseye-slim
+WORKDIR /
+
+COPY --from=fhiclcpp_build /opt/linedoc /opt/linedoc
+COPY --from=fhiclcpp_build /opt/fhiclcpp /opt/fhiclcpp
+ENV linedoc_ROOT=/opt/linedoc
+ENV fhiclcpp_ROOT=/opt/fhiclcpp
+
+COPY --from=systtools_build /opt/systematicstools /opt/systematicstools
+ENV systematicstools_ROOT=/opt/systematicstools
+
+COPY --from=nusyst_build /opt/nusystematics /opt/nusystematics
+ENV nusystematics_ROOT=/opt/nusystematics
+
+ENV NUSYST_INPUTS="/var/nusyst_inputs"
