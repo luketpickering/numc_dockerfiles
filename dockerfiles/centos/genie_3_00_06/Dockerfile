@@ -34,10 +34,8 @@ ENV GENIE_XSEC_TUNE=G18_02a_00_000
 RUN wget https://scisoft.fnal.gov/scisoft/packages/genie_xsec/v3_00_06/genie_xsec-3.00.06-noarch-${GENIE_XSEC_TUNE_COMPRESSED}-k250-e5000-resfixfix.tar.bz2 \
           -O genie_xsec-3.00.06-noarch-${GENIE_XSEC_TUNE_COMPRESSED}-k250-e5000-resfixfix.tar.bz2
 RUN yum install -y bzip2
-RUN tar xvf genie_xsec-3.00.06-noarch-${GENIE_XSEC_TUNE_COMPRESSED}-k250-e5000-resfixfix.tar.bz2
-# lets just have a single Tune identifier, one that uses underscores as that is what the --tune flag takes
-RUN mv ${GENIE_XSEC_TUNE_COMPRESSED}-k250-e5000-resfixfix ${GENIE_XSEC_TUNE}-k250-e5000-resfixfix
-RUN mv genie_xsec/v3_00_06/NULL/${GENIE_XSEC_TUNE_COMPRESSED}-k250-e5000-resfixfix/data/gxspl-NUsmall.xml ./${GENIE_XSEC_TUNE}-k250-e5000-resfixfix/data/gxspl-NUsmall.xml
+RUN tar xvf genie_xsec-3.00.06-noarch-${GENIE_XSEC_TUNE_COMPRESSED}-k250-e5000-resfixfix.tar.bz2  #inv cache
+RUN mv genie_xsec/v3_00_06/NULL/${GENIE_XSEC_TUNE_COMPRESSED}-k250-e5000-resfixfix/data/gxspl-NUsmall.xml ./
 COPY gxspl.min.awk /
 RUN awk -f gxspl.min.awk gxspl-NUsmall.xml > gxspl-min.xml
 RUN gzip gxspl-min.xml
@@ -132,7 +130,7 @@ ENV GENIE_REWEIGHT=${GENIE}
 
 ENV PATH=${GENIE}/bin:${PATH}
 ENV LD_LIBRARY_PATH=${GENIE}/lib:${LD_LIBRARY_PATH}
-ENV ROOT_INCLUDE_PATH=${GENIE}/include/GENIE
+ENV ROOT_INCLUDE_PATH=${GENIE}/include/GENIE:${ROOT_INCLUDE_PATH}
 
 ENV GENIE_XSEC_TUNE=G1802a00000
 ENV GENIE_XSEC_DIR=/opt/genie/${GENIE_VERSION}/var/genie/xsec/${GENIE_XSEC_TUNE}-k250-e5000-resfixfix

@@ -18,7 +18,7 @@ ENV GENIE_REWEIGHT=${GENIE}
 
 ENV PATH=${GENIE}/bin:${PATH}
 ENV LD_LIBRARY_PATH=${GENIE}/lib:${LD_LIBRARY_PATH}
-ENV ROOT_INCLUDE_PATH=${GENIE}/include/GENIE
+ENV ROOT_INCLUDE_PATH=${GENIE}/include/GENIE:${ROOT_INCLUDE_PATH}
 
 ENV GENIE_XSEC_TUNE=G18_02a_00_000
 ENV GENIE_XSEC_DIR=/opt/genie/${GENIE_VERSION}/var/genie/xsec/${GENIE_XSEC_TUNE}-k250-e5000-resfixfix
@@ -44,9 +44,9 @@ ENV PATH=${GiBUU}/bin:${PATH}
 
 WORKDIR /opt
 
-RUN git clone https://github.com/NUISANCEMC/nuisance.git nuisance-src #invalidate cache
+RUN git clone https://github.com/NUISANCEMC/nuisance.git nuisance-src
 WORKDIR /opt/nuisance-src
-RUN git checkout feature/modern_cmake
+RUN git checkout feature/nuis_CLI
 RUN mkdir /opt/nuisance-build
 
 WORKDIR /opt/nuisance-build
@@ -73,7 +73,7 @@ ENV GENIE_REWEIGHT=${GENIE}
 
 ENV PATH=${GENIE}/bin:${PATH}
 ENV LD_LIBRARY_PATH=${GENIE}/lib:${LD_LIBRARY_PATH}
-ENV ROOT_INCLUDE_PATH=${GENIE}/include/GENIE
+ENV ROOT_INCLUDE_PATH=${GENIE}/include/GENIE:${ROOT_INCLUDE_PATH}
 
 ENV GENIE_XSEC_TUNE=G18_02a_00_000
 ENV GENIE_XSEC_DIR=/opt/genie/${GENIE_VERSION}/var/genie/xsec/${GENIE_XSEC_TUNE}-k250-e5000-resfixfix

@@ -36,7 +36,7 @@ RUN find . -name trapfpe.c -exec sed -i "s/(_FPU_DEFAULT & ~_FPU_EXTENDED) | _FP
 RUN autoreconf -if
 
 WORKDIR /opt/neut-build
-RUN /opt/neut-src/src/configure --prefix=/opt/neut/${NEUT_VERSION}
+RUN /opt/neut-src/src/configure --prefix=/opt/neut/${NEUT_VERSION} --enable-debug
 RUN make install -j 4
 
 FROM picker24/root_v6_24_06:centos_7

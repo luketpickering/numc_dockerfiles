@@ -49,7 +49,7 @@ RUN make -j 5 && make install
 FROM systtools_build AS nusyst_build
 WORKDIR /opt
 
-RUN git clone https://github.com/luketpickering/nusystematics.git nusystematics-src #blabla3
+RUN git clone https://github.com/luketpickering/nusystematics.git nusystematics-src
 WORKDIR /opt/nusystematics-src
 RUN git checkout develop_artless
 
@@ -77,8 +77,12 @@ ENV fhiclcpp_ROOT=/opt/fhiclcpp
 
 COPY --from=systtools_build /opt/systematicstools /opt/systematicstools
 ENV systematicstools_ROOT=/opt/systematicstools
+ENV PATH=${systematicstools_ROOT}/bin:${PATH}
+ENV LD_LIBRARY_PATH=${systematicstools_ROOT}/lib:${LD_LIBRARY_PATH}
 
 COPY --from=nusyst_build /opt/nusystematics /opt/nusystematics
 ENV nusystematics_ROOT=/opt/nusystematics
+ENV PATH=${nusystematics_ROOT}/bin:${PATH}
+ENV LD_LIBRARY_PATH=${nusystematics_ROOT}/lib:${LD_LIBRARY_PATH}
 
 ENV NUSYST_INPUTS="/var/nusyst_inputs"

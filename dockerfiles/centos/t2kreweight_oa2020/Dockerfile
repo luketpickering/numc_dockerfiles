@@ -47,7 +47,9 @@ RUN ENV_CXXFLAGS="$(root-config --cflags) " make autogen-headers
 RUN ENV_CXXFLAGS="$(root-config --cflags) " make make-bin-lib-dir
 RUN ENV_CXXFLAGS="$(root-config --cflags) " make src
 
-RUN mkdir -p /opt/t2kreweight/${T2KREWEIGHT_VERSION}/{bin,lib,include}
+RUN mkdir -p /opt/t2kreweight/${T2KREWEIGHT_VERSION}/bin
+RUN mkdir -p /opt/t2kreweight/${T2KREWEIGHT_VERSION}/lib
+RUN mkdir -p /opt/t2kreweight/${T2KREWEIGHT_VERSION}/include
 RUN ln -s /opt/t2kreweight/${T2KREWEIGHT_VERSION}/include /opt/t2kreweight/${T2KREWEIGHT_VERSION}/src
 RUN cp /opt/t2kreweight-src/src/*.h /opt/t2kreweight/${T2KREWEIGHT_VERSION}/include/
 RUN cp /opt/t2kreweight-src/lib/libT2KReWeight.so /opt/t2kreweight/${T2KREWEIGHT_VERSION}/lib/
