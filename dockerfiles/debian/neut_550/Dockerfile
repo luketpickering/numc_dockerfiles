@@ -43,6 +43,7 @@ FROM picker24/root_v6_24_06:debian_bullseye-slim
 WORKDIR /
 
 COPY --from=neut_build /opt/cernlib /opt/cernlib
+COPY --from=cernlib_build /opt/cernlib-src /opt/cernlib-src
 ENV CERN /opt/cernlib
 ENV CERN_LEVEL 2005
 ENV CERN_ROOT /opt/cernlib/2005

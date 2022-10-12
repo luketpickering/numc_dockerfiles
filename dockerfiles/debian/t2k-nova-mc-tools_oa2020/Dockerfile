@@ -9,7 +9,7 @@ ENV CERN /opt/cernlib
 ENV CERN_LEVEL 2005
 ENV CERN_ROOT /opt/cernlib/2005
 
-ENV NEUT_VERSION=oa2020
+ENV NEUT_VERSION=5.4.2
 COPY --from=picker24/t2kreweight_oa2020:debian_bullseye-slim /opt/neut /opt/neut
 ENV NEUT_ROOT=/opt/neut/${NEUT_VERSION}
 ENV NEUT=/opt/neut/${NEUT_VERSION}
@@ -33,9 +33,8 @@ ENV T2KREWEIGHT_VERSION=oa2020
 ENV T2KREWEIGHT="/opt/t2kreweight/${T2KREWEIGHT_VERSION}"
 ENV LD_LIBRARY_PATH=${T2KREWEIGHT}/lib:${LD_LIBRARY_PATH}
 
-RUN git clone https://github.com/NUISANCEMC/nuisance.git nuisance-src #inv cache here
+RUN git clone https://github.com/NUISANCEMC/nuisance.git nuisance-src
 WORKDIR /opt/nuisance-src
-RUN git checkout feature/validation_scripts
 RUN mkdir /opt/nuisance-build
 
 WORKDIR /opt/nuisance-build
@@ -52,7 +51,7 @@ ENV CERN /opt/cernlib
 ENV CERN_LEVEL 2005
 ENV CERN_ROOT /opt/cernlib/2005
 
-ENV NEUT_VERSION=oa2020
+ENV NEUT_VERSION=5.4.2
 COPY --from=picker24/t2kreweight_oa2020:debian_bullseye-slim /opt/neut /opt/neut
 ENV NEUT_ROOT=/opt/neut/${NEUT_VERSION}
 ENV NEUT=/opt/neut/${NEUT_VERSION}

@@ -21,7 +21,7 @@ ENV CERN /opt/cernlib
 ENV CERN_LEVEL 2005
 ENV CERN_ROOT /opt/cernlib/2005
 
-ENV NEUT_VERSION=oa2020
+ENV NEUT_VERSION=5.4.2
 
 RUN mkdir -p /opt/neut-build
 RUN mkdir -p ~/.ssh/
@@ -30,7 +30,7 @@ RUN ssh-keyscan github.com > ~/.ssh/known_hosts
 WORKDIR /opt
 RUN --mount=type=ssh git clone git@github.com:neut-devel/neut.git neut
 WORKDIR /opt/neut
-RUN git checkout 5.4.2
+RUN git checkout ${NEUT_VERSION}
 WORKDIR /opt/neut/src
 RUN find . -name trapfpe.c -exec sed -i "s/(_FPU_DEFAULT & ~_FPU_EXTENDED) | _FPU_DOUBLE/_FPU_DEFAULT/g" \{} \;
 RUN autoreconf -if
@@ -48,7 +48,7 @@ ENV CERN_LEVEL 2005
 ENV CERN_ROOT /opt/cernlib/2005
 
 RUN mkdir /opt/neut
-ENV NEUT_VERSION=oa2020
+ENV NEUT_VERSION=5.4.2
 COPY --from=neut_build /opt/neut/${NEUT_VERSION} /opt/neut/${NEUT_VERSION}
 ENV NEUT_ROOT=/opt/neut/${NEUT_VERSION}
 ENV NEUT=/opt/neut/${NEUT_VERSION}

@@ -11,7 +11,7 @@ BRANCHNAME=""
 OUTFILE=""
 NMAX=""
 NSKIP=""
-PROBE=14
+PROBE=""
 
 TARGET=""
 
@@ -160,6 +160,8 @@ while [[ ${#} -gt 0 ]]; do
       echo -e "\tRequired:"
       echo -e "\t  -g|--generator <NEUT/GENIE>"
       echo -e "\t  -i|--input </path/to/input.root>"
+      echo -e "\t  -t|--targed <CH|H2O>"
+      echo -e "\t  -P|--probe <nu[mu,e][,bar]>"
       echo -e "\Optional:"
       echo -e "\t  -o|--output </path/to/output.root>"
       echo -e "\t  -n|--nmax <max evs to process>"
@@ -195,6 +197,11 @@ if [ -z $TARGET ] || ( [ ! ${TARGET} = "CH" ] && [ ! ${TARGET} = "H2O" ] ); then
   exit 1
 fi
 
+if [ -z $PROBE ]; then
+  echo "Please pass a probe (nu[mu,e][,bar]) with the -P option."
+  exit 1
+fi
+
 if [ -z $INPF ] || [ ! -e $INPF ]; then
   echo "Please pass an input file to read with the -i option."
   exit 1
@@ -203,209 +210,109 @@ fi
 # Table of dials <NAME>,<VALUE>,<TYPE>
 BANFF_PRE=(
 
-"NXSec_MaCCQE,-0.031138,t2k_parameter"
+"NXSec_MaCCQE,-0.8999980011,t2k_parameter"
 
-"NXSec_CA5RES,-0.049505,t2k_parameter"
-"NXSec_MaRES,0.12632,t2k_parameter"
-"NXSec_BgSclRES,-0.261538,t2k_parameter"
+"NIWGMEC_PDDWeight_C12,-21.25,t2k_parameter"
+"NIWGMEC_PDDWeight_O16,-26.66666667,t2k_parameter"
+
+"NXSec_CA5RES,-0.2000002004,t2k_parameter"
+"NXSec_MaRES,0.8000266659,t2k_parameter"
+"NXSec_BgSclRES,-1.699996998,t2k_parameter"
+"NXSec_UseSeparateBgSclLMCPiBar,1,t2k_parameter"
+"NXSec_BgSclLMCPiBarRES,-0.5666656661,t2k_parameter"
+
+)
+
+BANFF_POST=(
+
+"NXSec_MaCCQE,-0.1883849002,t2k_parameter"
+
+"NIWGQETwk_LowQ2Suppression1,0.784189,t2k_parameter"
+"NIWGQETwk_LowQ2Suppression2,0.886824,t2k_parameter"
+"NIWGQETwk_LowQ2Suppression3,1.02287,t2k_parameter"
+"NIWGQETwk_LowQ2Suppression4,1.02686,t2k_parameter"
+"NIWGQETwk_LowQ2Suppression5,1.08673,t2k_parameter"
+"NIWGQETwk_LowQ2Suppression6,1.25683,t2k_parameter"
+"NIWGQETwk_LowQ2Suppression7,1.13608,t2k_parameter"
+"NIWGQETwk_LowQ2Suppression8,1.25937,t2k_parameter"
+
+"NIWGMEC_PDDWeight_C12,-0.70182375,t2k_parameter"
+"NIWGMEC_PDDWeight_O16,-26.75522027,t2k_parameter"
+
+"NXSec_CA5RES,-0.1052339202,t2k_parameter"
+"NXSec_MaRES,-1.073271999,t2k_parameter"
+"NXSec_BgSclRES,-2.174607498,t2k_parameter"
+"NXSec_UseSeparateBgSclLMCPiBar,1,t2k_parameter"
+"NXSec_BgSclLMCPiBarRES,-0.5666656661,t2k_parameter"
+
+"NIWG_DIS_BY,1.04153,t2k_parameter"
+"NIWG_MultiPi_BY,-0.0319243,t2k_parameter"
+"NIWG_MultiPi_Xsec_AGKY,0.139487,t2k_parameter"
+
+#CC_COH
+"mode_16,0.609,modenorm_parameter"
+#NC_COH
+"mode_36,1.018,modenorm_parameter"
+
+#NC_other_near
+"mode_41,1.662,modenorm_parameter"
+"mode_42,1.662,modenorm_parameter"
+"mode_43,1.662,modenorm_parameter"
+"mode_44,1.662,modenorm_parameter"
+"mode_45,1.662,modenorm_parameter"
+"mode_46,1.662,modenorm_parameter"
+
+#CC_Misc
+"mode_17,2.27764,modenorm_parameter"
+"mode_22,2.27764,modenorm_parameter"
+"mode_23,2.27764,modenorm_parameter"
+
+"NCasc_FrInelLow_pi,-0.34744,t2k_parameter"
+"NCasc_FrInelHigh_pi,-0.8403433333,t2k_parameter"
+"NCasc_FrPiProd_pi,1.42996,t2k_parameter"
+"NCasc_FrAbs_pi,0.38086,t2k_parameter"
+"NCasc_FrCExLow_pi,-0.445892,t2k_parameter"
 
 )
 
 BANFF_POST_C_NU=(
 
-"NXSec_MaCCQE,-0.031138,t2k_parameter"
-
-"NIWGQETwk_LowQ2Suppression1,0.7841,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression2,0.8868,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression3,1.0228,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression4,1.0268,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression5,1.0867,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression6,1.2568,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression7,1.1360,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression8,1.2593,t2k_parameter"
-
-"NXSec_CA5RES,-0.02605,t2k_parameter"
-"NXSec_MaRES,-0.1695,t2k_parameter"
-"NXSec_BgSclRES,-0.3346,t2k_parameter"
-
-"NIWGMEC_PDDWeight_C12,0.9669,t2k_parameter"
-"NIWGMEC_PDDWeight_O16,-0.0033,t2k_parameter"
+#nu C
+"mode_2,1.05805,modenorm_parameter"
 
 #nu
-"mode_2,1.058,modenorm_parameter"
-
-#nubar
-#mode_2,0.721
-#CtoO 1.046
-
-"mode_26,1.061,modenorm_parameter"
-"mode_21,1.061,modenorm_parameter"
-#nubar,0.9350
-
-"NIWG_DIS_BY,1.041,t2k_parameter"
-"NIWG_MultiPi_BY,-0.0319,t2k_parameter"
-"NIWG_MultiPi_Xsec_AGKY,0.1394,t2k_parameter"
-
-"mode_16,0.609,modenorm_parameter"
-"mode_36,1.018,modenorm_parameter"
-"mode_38,1,modenorm_parameter"
-
-"mode_41,1.662,modenorm_parameter"
-"mode_42,1.662,modenorm_parameter"
-"mode_43,1.662,modenorm_parameter"
-"mode_44,1.662,modenorm_parameter"
-"mode_45,1.662,modenorm_parameter"
-"mode_46,1.662,modenorm_parameter"
-
-"NCasc_FrInelLow_pi,-0.1738,t2k_parameter"
-"NCasc_FrInelHigh_pi,-0.2522,t2k_parameter"
-"NCasc_FrPiProd_pi,0.7149,t2k_parameter"
-"NCasc_FrAbs_pi,0.1904,t2k_parameter"
-"NCasc_FrCExLow_pi,-0.223,t2k_parameter"
+"mode_26,1.0616,modenorm_parameter"
+"mode_21,1.0616,modenorm_parameter"
 
 )
-
-BANFF_POST_C_NUB=(
-
-"NXSec_MaCCQE,-0.0312,t2k_parameter"
-
-"NIWGQETwk_LowQ2Suppression1,0.7841,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression2,0.8868,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression3,1.0228,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression4,1.0268,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression5,1.0867,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression6,1.2568,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression7,1.1360,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression8,1.2593,t2k_parameter"
-
-"NXSec_CA5RES,-0.02605,t2k_parameter"
-"NXSec_MaRES,-0.1695,t2k_parameter"
-"NXSec_BgSclRES,-0.3346,t2k_parameter"
-
-"NIWGMEC_PDDWeight_C12,0.9669,t2k_parameter"
-"NIWGMEC_PDDWeight_O16,-0.0033,t2k_parameter"
-
-"mode_2,0.721,modenorm_parameter"
-
-"mode_26,0.9350,modenorm_parameter"
-"mode_21,0.9350,modenorm_parameter"
-
-"NIWG_DIS_BY,1.041,t2k_parameter"
-"NIWG_MultiPi_BY,-0.0319,t2k_parameter"
-"NIWG_MultiPi_Xsec_AGKY,0.1394,t2k_parameter"
-
-"mode_16,0.609,modenorm_parameter"
-"mode_36,1.018,modenorm_parameter"
-"mode_38,1,modenorm_parameter"
-
-"mode_41,1.662,modenorm_parameter"
-"mode_42,1.662,modenorm_parameter"
-"mode_43,1.662,modenorm_parameter"
-"mode_44,1.662,modenorm_parameter"
-"mode_45,1.662,modenorm_parameter"
-"mode_46,1.662,modenorm_parameter"
-
-"NCasc_FrInelLow_pi,-0.1738,t2k_parameter"
-"NCasc_FrInelHigh_pi,-0.2522,t2k_parameter"
-"NCasc_FrPiProd_pi,0.7149,t2k_parameter"
-"NCasc_FrAbs_pi,0.1904,t2k_parameter"
-"NCasc_FrCExLow_pi,-0.223,t2k_parameter"
-
-)
-
 BANFF_POST_O_NU=(
 
-"NXSec_MaCCQE,-0.0312,t2k_parameter"
+#nu O C*1.04647
+"mode_2,1.05805,modenorm_parameter"
 
-"NIWGQETwk_LowQ2Suppression1,0.7841,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression2,0.8868,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression3,1.0228,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression4,1.0268,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression5,1.0867,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression6,1.2568,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression7,1.1360,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression8,1.2593,t2k_parameter"
-
-"NXSec_CA5RES,-0.02605,t2k_parameter"
-"NXSec_MaRES,-0.1695,t2k_parameter"
-"NXSec_BgSclRES,-0.3346,t2k_parameter"
-
-"NIWGMEC_PDDWeight_C12,0.9669,t2k_parameter"
-"NIWGMEC_PDDWeight_O16,-0.0033,t2k_parameter"
-
-"mode_2,1.1066,modenorm_parameter"
-
-"mode_26,1.061,modenorm_parameter"
-"mode_21,1.061,modenorm_parameter"
-
-"NIWG_DIS_BY,1.041,t2k_parameter"
-"NIWG_MultiPi_BY,-0.0319,t2k_parameter"
-"NIWG_MultiPi_Xsec_AGKY,0.1394,t2k_parameter"
-
-"mode_16,0.609,modenorm_parameter"
-"mode_36,1.018,modenorm_parameter"
-"mode_38,1,modenorm_parameter"
-
-"mode_41,1.662,modenorm_parameter"
-"mode_42,1.662,modenorm_parameter"
-"mode_43,1.662,modenorm_parameter"
-"mode_44,1.662,modenorm_parameter"
-"mode_45,1.662,modenorm_parameter"
-"mode_46,1.662,modenorm_parameter"
-
-"NCasc_FrInelLow_pi,-0.1738,t2k_parameter"
-"NCasc_FrInelHigh_pi,-0.2522,t2k_parameter"
-"NCasc_FrPiProd_pi,0.7149,t2k_parameter"
-"NCasc_FrAbs_pi,0.1904,t2k_parameter"
-"NCasc_FrCExLow_pi,-0.223,t2k_parameter"
+#nu
+"mode_26,1.0616,modenorm_parameter"
+"mode_21,1.0616,modenorm_parameter"
 
 )
+BANFF_POST_C_NUB=(
 
+#nub C
+"mode_2,0.721673,modenorm_parameter"
+
+#nub
+"mode_26,0.935022,modenorm_parameter"
+"mode_21,0.935022,modenorm_parameter"
+
+)
 BANFF_POST_O_NUB=(
 
-"NXSec_MaCCQE,-0.0312,t2k_parameter"
+#nub O C*1.04647
+"mode_2,1.107217,modenorm_parameter"
 
-"NIWGQETwk_LowQ2Suppression1,0.7841,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression2,0.8868,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression3,1.0228,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression4,1.0268,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression5,1.0867,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression6,1.2568,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression7,1.1360,t2k_parameter"
-"NIWGQETwk_LowQ2Suppression8,1.2593,t2k_parameter"
-
-"NXSec_CA5RES,-0.02605,t2k_parameter"
-"NXSec_MaRES,-0.1695,t2k_parameter"
-"NXSec_BgSclRES,-0.3346,t2k_parameter"
-
-"NIWGMEC_PDDWeight_C12,0.9669,t2k_parameter"
-"NIWGMEC_PDDWeight_O16,-0.0033,t2k_parameter"
-
-"mode_2,0.7541,modenorm_parameter"
-
-"mode_26,0.9350,modenorm_parameter"
-"mode_21,0.9350,modenorm_parameter"
-
-"NIWG_DIS_BY,1.041,t2k_parameter"
-"NIWG_MultiPi_BY,-0.0319,t2k_parameter"
-"NIWG_MultiPi_Xsec_AGKY,0.1394,t2k_parameter"
-
-"mode_16,0.609,modenorm_parameter"
-"mode_36,1.018,modenorm_parameter"
-"mode_38,1,modenorm_parameter"
-
-"mode_41,1.662,modenorm_parameter"
-"mode_42,1.662,modenorm_parameter"
-"mode_43,1.662,modenorm_parameter"
-"mode_44,1.662,modenorm_parameter"
-"mode_45,1.662,modenorm_parameter"
-"mode_46,1.662,modenorm_parameter"
-
-"NCasc_FrInelLow_pi,-0.1738,t2k_parameter"
-"NCasc_FrInelHigh_pi,-0.2522,t2k_parameter"
-"NCasc_FrPiProd_pi,0.7149,t2k_parameter"
-"NCasc_FrAbs_pi,0.1904,t2k_parameter"
-"NCasc_FrCExLow_pi,-0.223,t2k_parameter"
+#nub
+"mode_26,0.935022,modenorm_parameter"
+"mode_21,0.935022,modenorm_parameter"
 
 )
 
@@ -432,42 +339,53 @@ if [ ! -z $TUNE ]; then
       CHOSEN_TUNE=${BANFF_PRE[@]}
       NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_14_C.card"
     elif  [ ${TUNE} == "BANFF_POST" ]; then
-
+        CHOSEN_TUNE=${BANFF_POST[@]}
         if [ ${PROBE} == "numu" ]; then
           if [ ${TARGET} == "CH" ]; then
-            CHOSEN_TUNE=${BANFF_POST_C_NU[@]}
+            for d in ${BANFF_POST_C_NU[@]}; do
+              CHOSEN_TUNE+=( ${d} )
+            done
             NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_14_C.card"
           else
-            CHOSEN_TUNE=${BANFF_POST_O_NU[@]}
+            for d in ${BANFF_POST_O_NU[@]}; do
+              CHOSEN_TUNE+=( ${d} )
+            done
             NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_14_O.card"
           fi
         elif [ ${PROBE} == "nue" ]; then
           if [ ${TARGET} == "CH" ]; then
-            CHOSEN_TUNE=${BANFF_POST_C_NU[@]}
+            for d in ${BANFF_POST_C_NU[@]}; do
+              CHOSEN_TUNE+=( ${d} )
+            done
             NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_12_C.card"
           else
-            CHOSEN_TUNE=${BANFF_POST_O_NU[@]}
+            for d in ${BANFF_POST_O_NU[@]}; do
+              CHOSEN_TUNE+=( ${d} )
+            done
             NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_12_O.card"
           fi
-        else 
-          echo "Invalid probe: ${PROBE}, for tune: ${TUNE}"
-          exit 1
-        fi
-
-        if [ ${PROBE} == "numubar" ]; then
+        elif [ ${PROBE} == "numubar" ]; then
           if [ ${TARGET} == "CH" ]; then
-            CHOSEN_TUNE=${BANFF_POST_C_NUB[@]}
+            for d in ${BANFF_POST_C_NUB[@]}; do
+              CHOSEN_TUNE+=( ${d} )
+            done
             NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_-14_C.card"
           else
-            CHOSEN_TUNE=${BANFF_POST_O_NUB[@]}
+            for d in ${BANFF_POST_O_NUB[@]}; do
+              CHOSEN_TUNE+=( ${d} )
+            done
             NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_-14_O.card"
           fi
         elif [ ${PROBE} == "nuebar" ]; then
           if [ ${TARGET} == "CH" ]; then
-            CHOSEN_TUNE=${BANFF_POST_C_NUB[@]}
+            for d in ${BANFF_POST_C_NUB[@]}; do
+              CHOSEN_TUNE+=( ${d} )
+            done
             NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_-12_C.card"
           else
-            CHOSEN_TUNE=${BANFF_POST_O_NUB[@]}
+            for d in ${BANFF_POST_O_NUB[@]}; do
+              CHOSEN_TUNE+=( ${d} )
+            done
             NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_-12_O.card"
           fi
         else 

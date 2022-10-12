@@ -4,9 +4,9 @@ FROM picker24/nusystematics:debian_bullseye-slim AS nuisance_build
 WORKDIR /opt
 
 # pull in NuWro
-COPY --from=picker24/nuwro_21_09:debian_bullseye-slim /opt/nuwro/21_09/ /opt/nuwro/21_09/
+COPY --from=picker24/nuwro_21_09:debian_bullseye-slim /opt/nuwro/21.09.2/ /opt/nuwro/21.09.2/
 
-ENV NUWRO=/opt/nuwro/21_09
+ENV NUWRO=/opt/nuwro/21.09.2
 ENV PATH=${NUWRO}/bin:${PATH}
 ENV ROOT_INCLUDE_PATH=${NUWRO}/src:${ROOT_INCLUDE_PATH}
 
@@ -35,11 +35,10 @@ ENV ROOT_INCLUDE_PATH=/:${ROOT_INCLUDE_PATH}
 
 ENV PKG_CONFIG_PATH=${NEUT_ROOT}:${PKG_CONFIG_PATH}
 
-ENV INV_CACHE=2
+RUN echo "Lets reclone"
 
 RUN git clone https://github.com/NUISANCEMC/nuisance.git nuisance-src
 WORKDIR /opt/nuisance-src
-RUN git checkout feature/validation_scripts
 RUN mkdir /opt/nuisance-build
 
 WORKDIR /opt/nuisance-build
@@ -51,9 +50,9 @@ FROM picker24/nusystematics:debian_bullseye-slim
 WORKDIR /
 
 # pull in NuWro
-COPY --from=picker24/nuwro_21_09:debian_bullseye-slim /opt/nuwro/21_09/ /opt/nuwro/21_09/
+COPY --from=picker24/nuwro_21_09:debian_bullseye-slim /opt/nuwro/21.09.2/ /opt/nuwro/21.09.2/
 
-ENV NUWRO=/opt/nuwro/21_09
+ENV NUWRO=/opt/nuwro/21.09.2
 ENV PATH=${NUWRO}/bin:${PATH}
 ENV ROOT_INCLUDE_PATH=${NUWRO}/src:${ROOT_INCLUDE_PATH}
 
