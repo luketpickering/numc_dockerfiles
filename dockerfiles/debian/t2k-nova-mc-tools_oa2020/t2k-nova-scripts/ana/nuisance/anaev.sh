@@ -357,12 +357,12 @@ if [ ! -z $TUNE ]; then
             for d in ${BANFF_POST_C_NU[@]}; do
               CHOSEN_TUNE+=( ${d} )
             done
-            NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_12_C.card"
+            NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_14_C.card"
           else
             for d in ${BANFF_POST_O_NU[@]}; do
               CHOSEN_TUNE+=( ${d} )
             done
-            NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_12_O.card"
+            NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_14_O.card"
           fi
         elif [ ${PROBE} == "numubar" ]; then
           if [ ${TARGET} == "CH" ]; then
@@ -381,12 +381,12 @@ if [ ! -z $TUNE ]; then
             for d in ${BANFF_POST_C_NUB[@]}; do
               CHOSEN_TUNE+=( ${d} )
             done
-            NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_-12_C.card"
+            NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_-14_C.card"
           else
             for d in ${BANFF_POST_O_NUB[@]}; do
               CHOSEN_TUNE+=( ${d} )
             done
-            NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_-12_O.card"
+            NEUT_CARD="/var/t2k-nova/scripts/ana/nuisance/cards/NEUT_-14_O.card"
           fi
         else 
           echo "Invalid probe: ${PROBE}, for tune: ${TUNE}"
