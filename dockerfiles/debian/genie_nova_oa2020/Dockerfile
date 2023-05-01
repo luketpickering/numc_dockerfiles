@@ -35,6 +35,7 @@ RUN wget https://scisoft.fnal.gov/scisoft/packages/genie_xsec/v3_00_06/genie_xse
           -O genie_xsec-3.00.06-noarch-${GENIE_XSEC_TUNE_COMPRESSED}-k250-e1000-resfix.tar.bz2
 RUN tar xvf genie_xsec-3.00.06-noarch-${GENIE_XSEC_TUNE_COMPRESSED}-k250-e1000-resfix.tar.bz2
 RUN mv genie_xsec/v3_00_06/NULL/${GENIE_XSEC_TUNE_COMPRESSED}-k250-e1000-resfix/data/gxspl-NUsmall.xml ./
+RUN cp -r genie_xsec/v3_00_06/NULL/${GENIE_XSEC_TUNE_COMPRESSED}-k250-e1000-resfix/data/N18_10j ./
 COPY gxspl.min.awk /
 RUN awk -f gxspl.min.awk gxspl-NUsmall.xml > gxspl-min.xml
 RUN gzip gxspl-min.xml
@@ -97,7 +98,7 @@ RUN ln -s -t . ../include/GENIE/*/
 WORKDIR /
 ENV GENIE_XSEC_DIR=/opt/genie/${GENIE_VERSION}/var/genie/xsec/${GENIE_XSEC_TUNE}-k250-e1000-resfix
 RUN mkdir -p ${GENIE_XSEC_DIR}
-RUN cp gxspl-min.xml.gz ${GENIE_XSEC_DIR}
+RUN cp -r gxspl-min.xml.gz N18_10j ${GENIE_XSEC_DIR}/
 
 ENV GENIE_PHYOPT_DIR=/opt/genie/${GENIE_VERSION}/var/genie/phyopt/dkcharmtau-resfix
 RUN mkdir -p ${GENIE_PHYOPT_DIR}

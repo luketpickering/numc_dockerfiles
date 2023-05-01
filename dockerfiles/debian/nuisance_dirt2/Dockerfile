@@ -35,8 +35,6 @@ ENV ROOT_INCLUDE_PATH=/:${ROOT_INCLUDE_PATH}
 
 ENV PKG_CONFIG_PATH=${NEUT_ROOT}:${PKG_CONFIG_PATH}
 
-RUN echo "Lets reclone"
-
 RUN git clone https://github.com/NUISANCEMC/nuisance.git nuisance-src
 WORKDIR /opt/nuisance-src
 RUN mkdir /opt/nuisance-build

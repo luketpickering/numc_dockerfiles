@@ -4,9 +4,9 @@ WORKDIR /opt/
 
 RUN mkdir -p ~/.ssh/
 RUN ssh-keyscan github.com > ~/.ssh/known_hosts
-ENV INV_CACHE=1
 RUN --mount=type=ssh git clone git@github.com:luketpickering/NOvARwgt.git NOvARwgt-src
 WORKDIR /opt/NOvARwgt-src
+# RUN git checkout v2.0-dev21
 
 RUN mkdir -p /opt/NOvARwgt-build
 WORKDIR /opt/NOvARwgt-build

@@ -9,8 +9,8 @@ RUN git clone https://github.com/luketpickering/cernlibgcc5-.git
 WORKDIR /opt/cernlib-src/cernlibgcc5-
 RUN ./build_cernlib.sh
 RUN cp -r /opt/cernlib-src/cernlibgcc5-/cernlib_build/2005/bin \
-		/opt/cernlib-src/cernlibgcc5-/cernlib_build/2005/lib \
-		/opt/cernlib-src/cernlibgcc5-/cernlib_build/2005/include \
+    /opt/cernlib-src/cernlibgcc5-/cernlib_build/2005/lib \
+    /opt/cernlib-src/cernlibgcc5-/cernlib_build/2005/include \
      /opt/cernlib/2005
 
 FROM picker24/root_v6_24_06:centos_7 AS neut_build
@@ -39,13 +39,13 @@ RUN ln -s Linux_aarch64 Linux_pc
 
 WORKDIR /opt/neut/${NEUT_VERSION}/src
 RUN for i in ./*; do \
-		if [ -d ${i} ]; then \
-			cd ${i}; \
-			echo "ln -s $(pwd)/Linux_aarch64 $(pwd)/Linux_pc"; \
-			ln -s Linux_aarch64 Linux_pc; \
-			cd -  &> /dev/null; \
-		fi; \
-	done
+    if [ -d ${i} ]; then \
+      cd ${i}; \
+      echo "ln -s $(pwd)/Linux_aarch64 $(pwd)/Linux_pc"; \
+      ln -s Linux_aarch64 Linux_pc; \
+      cd -  &> /dev/null; \
+    fi; \
+  done
 
 WORKDIR /opt/neut/${NEUT_VERSION}/src/neutsmpl
 RUN sed -i "s/-lCint//g" GNUmakefile.dumptotpau
