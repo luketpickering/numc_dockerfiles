@@ -1,4 +1,0 @@
-# PKG_NAME[@Version=default][:Tag=<ROOT_IMAGE_TAG>] ROOT_IMAGE_NAME[:Tag=latest]
-!root@v5-34-38 $ENV$
-niwgreweight@oa2020_r5 $ENV$
-psyche@3-61 $ENV$

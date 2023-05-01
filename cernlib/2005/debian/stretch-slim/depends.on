@@ -1,3 +1,0 @@
-# PKG_NAME[@Version=default][:Tag=<ROOT_IMAGE_TAG>] ROOT_IMAGE_NAME[:Tag=latest]
-buildbox     $ENV$
-!runbox $ENV$

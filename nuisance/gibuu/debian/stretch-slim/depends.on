@@ -1,6 +1,0 @@
-# PKG_NAME[@Version=default][:Tag=<ROOT_IMAGE_TAG>] ROOT_IMAGE_NAME[:Tag=latest]
-
-gibuu debian:stretch-slim
-gibuu-t2k-dev debian:stretch-slim
-
-devbox debian:stretch-slim

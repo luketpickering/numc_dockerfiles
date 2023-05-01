@@ -1,5 +1,0 @@
-# PKG_NAME[@Version=default][:Tag=<ROOT_IMAGE_TAG>] ROOT_IMAGE_NAME[:Tag=latest]
-buildbox          debian:stretch-slim
-runbox        debian:stretch-slim
-root@v6-12-06 debian:stretch-slim
-pythia@6.4.28     debian:stretch-slim

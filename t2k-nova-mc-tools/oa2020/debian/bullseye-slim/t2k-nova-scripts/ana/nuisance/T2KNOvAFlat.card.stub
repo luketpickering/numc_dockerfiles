@@ -1,6 +1,0 @@
-<nuisance>
-  
-  <config GENIETune="__GENIE_XSEC_TUNE__" />
-  <sample name="T2KNOvAFlatTree" input="__GEN__:__INPF__" />
-
-</nuisance>

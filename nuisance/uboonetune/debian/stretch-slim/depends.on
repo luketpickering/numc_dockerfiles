@@ -1,3 +1,0 @@
-# PKG_NAME[@Version=default][:Tag=<ROOT_IMAGE_TAG>] ROOT_IMAGE_NAME[:Tag=latest]
-genie@3_00_04_ub1 debian:stretch-slim
-devbox debian:stretch-slim
