@@ -67,37 +67,41 @@ RUN git clone https://github.com/luketpickering/Reweight.git Reweight-src
 WORKDIR /opt/Reweight-src
 # RUN git checkout R-${GENIE_REWEIGHT_VERSION}
 
-ENV GENIE="/opt/Generator-src"
+ENV GENIE=/opt/Generator-src
 
 WORKDIR /opt/Generator-src
 RUN dnf install -y libnsl2-devel
+# RUN mkdir -p /opt/genie/${GENIE_VERSION} \
+#  && ./configure \
+#  && make -j 5 && make install
+
 RUN mkdir -p /opt/genie/${GENIE_VERSION} \
- && ./configure --prefix=/opt/genie/${GENIE_VERSION} \
- && make -j 5 \
- && make install
+ && ./configure --enable-debug \
+ && make -j 5
 
 ENV GENIE_REWEIGHT=/opt/Reweight-src/
 WORKDIR /opt/Reweight-src
-RUN make && make install
+# RUN make && make install
+RUN make
 
 RUN cp /opt/Generator-src/data/evgen/pdfs/GRV98lo_patched.LHgrid \
     ${LHAPATH}/GRV98lo_patched.LHgrid
 
-ENV GENIE="/opt/genie/${GENIE_VERSION}"
-ENV GENIE_REWEIGHT=${GENIE}
+# ENV GENIE="/opt/genie/${GENIE_VERSION}"
+# ENV GENIE_REWEIGHT=${GENIE}
 
-# Install some things that the GENIE install script forget.
-RUN cp /opt/Generator-src/VERSION ${GENIE}/
-RUN cp -r /opt/Generator-src/config ${GENIE}/
-RUN mkdir -p ${GENIE}/data/
-RUN cp -r /opt/Generator-src/data/evgen ${GENIE}/data/
+# # Install some things that the GENIE install script forget.
+# RUN cp /opt/Generator-src/VERSION ${GENIE}/
+# RUN cp -r /opt/Generator-src/config ${GENIE}/
+# RUN mkdir -p ${GENIE}/data/
+# RUN cp -r /opt/Generator-src/data/evgen ${GENIE}/data/
 
-RUN mkdir -p ${GENIE}/src/make/
-RUN cp /opt/Generator-src/src/make/Make.config_no_paths \
-                      ${GENIE}/src/make/
+# RUN mkdir -p ${GENIE}/src/make/
+# RUN cp /opt/Generator-src/src/make/Make.config_no_paths \
+#                       ${GENIE}/src/make/
 
-WORKDIR ${GENIE}/src
-RUN ln -s -t . ../include/GENIE/*/
+# WORKDIR ${GENIE}/src
+# RUN ln -s -t . ../include/GENIE/*/
 
 WORKDIR /
 ENV GENIE_XSEC_DIR=/opt/genie/${GENIE_VERSION}/var/genie/xsec/${GENIE_XSEC_TUNE}-k250-e1000
@@ -108,32 +112,32 @@ ENV GENIE_PHYOPT_DIR=/opt/genie/${GENIE_VERSION}/var/genie/phyopt/dkcharmtau
 RUN mkdir -p ${GENIE_PHYOPT_DIR}
 RUN cp -r dkcharmtau/* ${GENIE_PHYOPT_DIR}/
 
-FROM picker24/root_v6_26_10:alma9
+# FROM picker24/root_v6_26_10:alma9
 
-RUN dnf install -y libnsl2-devel
+# RUN dnf install -y libnsl2-devel
 
-COPY --from=lhapdf_build /opt/lhapdf /opt/lhapdf
-ENV LHAPDF_VERS=5.9.1
-ENV LHAPATH=/opt/lhapdf/${LHAPDF_VERS}
-ENV PATH=${LHAPATH}/bin:${PATH}
-ENV LD_LIBRARY_PATH=${LHAPATH}/lib:${LD_LIBRARY_PATH}
-ENV LHAPDF_INC=${LHAPATH}/include
-ENV LHAPDF_LIB=${LHAPATH}/lib
+# COPY --from=lhapdf_build /opt/lhapdf /opt/lhapdf
+# ENV LHAPDF_VERS=5.9.1
+# ENV LHAPATH=/opt/lhapdf/${LHAPDF_VERS}
+# ENV PATH=${LHAPATH}/bin:${PATH}
+# ENV LD_LIBRARY_PATH=${LHAPATH}/lib:${LD_LIBRARY_PATH}
+# ENV LHAPDF_INC=${LHAPATH}/include
+# ENV LHAPDF_LIB=${LHAPATH}/lib
 
-COPY --from=genie_build /opt/genie /opt/genie
-ENV GENIE_VERSION=3_02_02
-ENV GENIE_REWEIGHT_VERSION=1_02_02
-ENV GENIE="/opt/genie/${GENIE_VERSION}"
-ENV GENIE_REWEIGHT=${GENIE}
+# COPY --from=genie_build /opt/genie /opt/genie
+# ENV GENIE_VERSION=3_02_02
+# ENV GENIE_REWEIGHT_VERSION=1_02_02
+# ENV GENIE="/opt/genie/${GENIE_VERSION}"
+# ENV GENIE_REWEIGHT=${GENIE}
 
 ENV PATH=${GENIE}/bin:${PATH}
-ENV LD_LIBRARY_PATH=${GENIE}/lib:${LD_LIBRARY_PATH}
+ENV LD_LIBRARY_PATH=${GENIE_REWEIGHT}/lib:${GENIE}/lib:${LD_LIBRARY_PATH}
 ENV ROOT_INCLUDE_PATH=${GENIE}/include/GENIE:${ROOT_INCLUDE_PATH}
 
 ENV GENIE_XSEC_TUNE=G18_02a_00_000
-ENV GENIE_XSEC_DIR=/opt/genie/${GENIE_VERSION}/var/genie/xsec/${GENIE_XSEC_TUNE}-k250-e1000
+# ENV GENIE_XSEC_DIR=/opt/genie/${GENIE_VERSION}/var/genie/xsec/${GENIE_XSEC_TUNE}-k250-e1000
 ENV GENIE_XSEC_FILE="${GENIE_XSEC_DIR}/gxspl-min.xml.gz"
 
-ENV GENIE_PHYOPT_DIR=/opt/genie/${GENIE_VERSION}/var/genie/phyopt/dkcharmtau
+# ENV GENIE_PHYOPT_DIR=/opt/genie/${GENIE_VERSION}/var/genie/phyopt/dkcharmtau
 
 ENV GXMLPATH=${GENIE_PHYOPT_DIR}:${GENIE_XSEC_DIR}

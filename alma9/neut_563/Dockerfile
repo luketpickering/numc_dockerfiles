@@ -7,7 +7,7 @@ ENV CERN=/opt/cernlib \
     CERN_LEVEL=2005 \
     CERN_ROOT=/opt/cernlib/2005
 
-ENV NEUT_VERSION=5.6.2
+ENV NEUT_VERSION=5.6.3
 
 RUN mkdir -p /opt/neut-build
 RUN mkdir -p ~/.ssh/
@@ -16,7 +16,7 @@ RUN ssh-keyscan github.com > ~/.ssh/known_hosts
 WORKDIR /opt
 RUN --mount=type=ssh git clone git@github.com:neut-devel/neut.git neut
 WORKDIR /opt/neut
-RUN git checkout 5.6.2
+RUN git checkout 5.6.3
 WORKDIR /opt/neut/src
 RUN find . -name trapfpe.c -exec sed -i "s/(_FPU_DEFAULT & ~_FPU_EXTENDED) | _FPU_DOUBLE/_FPU_DEFAULT/g" \{} \;
 RUN autoreconf -if
@@ -37,7 +37,7 @@ ENV CERN=/opt/cernlib \
     CERN_LEVEL=2005 \
     CERN_ROOT=/opt/cernlib/2005
 
-ENV NEUT_VERSION=5.6.2
+ENV NEUT_VERSION=5.6.3
 ENV NEUT_ROOT=/opt/neut/${NEUT_VERSION}
 ENV PATH=${NEUT_ROOT}/bin:${PATH} \
     LD_LIBRARY_PATH=${NEUT_ROOT}/lib:${LD_LIBRARY_PATH} \
