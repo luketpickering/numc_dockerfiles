@@ -1,0 +1,53 @@
+#!/bin/bash
+
+if [ ${#} == 0 ] || [ ${1} == "-?" ] || [ ${1} == "--help" ] || [ ${1} == "-h" ]; then
+  echo "[RUNLIKE]: ${0} <GENIE_VERSION=3_04_00> <GENIE_TUNE=AR23_20i_00_000>"
+  exit 1
+fi
+
+GENIE_VERSION=${1}
+GENIE_VERSION_DOT=$(echo ${GENIE_VERSION} | tr "_" ".")
+
+GENIE_TUNE=${2}
+GENIE_TUNE_COMPRESSED=$(echo ${GENIE_TUNE} | sed "s:_::g")
+
+OUTPUT_ROOT=/opt
+
+set -x
+set -e
+
+RUNDIR=$(pwd)
+
+cd ${OUTPUT_ROOT}
+OUTPUT_ROOT=$(pwd)
+
+TMPDIR=/tmp/genie_fetch_$$
+
+mkdir -p ${TMPDIR}
+cd ${TMPDIR}
+
+wget https://scisoft.fnal.gov/scisoft/packages/genie_xsec/v${GENIE_VERSION}/genie_xsec-${GENIE_VERSION_DOT}-noarch-${GENIE_TUNE_COMPRESSED}-k250-e1000.tar.bz2 \
+          -O genie_xsec-${GENIE_VERSION_DOT}-noarch-${GENIE_TUNE_COMPRESSED}-k250-e1000.tar.bz2
+tar xvf genie_xsec-${GENIE_VERSION_DOT}-noarch-${GENIE_TUNE_COMPRESSED}-k250-e1000.tar.bz2
+
+cd genie_xsec/v${GENIE_VERSION}/NULL/${GENIE_TUNE_COMPRESSED}-k250-e1000/data
+
+awk -f /opt/genie/utils/gxspl.min.awk gxspl-NUsmall.xml > gxspl-min.xml
+gzip gxspl-min.xml
+
+mkdir -p ${OUTPUT_ROOT}/genie_xsec/${GENIE_VERSION}/${GENIE_TUNE}
+cp gxspl-min.xml.gz ${OUTPUT_ROOT}/genie_xsec/${GENIE_VERSION}/${GENIE_TUNE}/
+
+cd ${TMPDIR}
+
+wget https://scisoft.fnal.gov/scisoft/packages/genie_phyopt/v${GENIE_VERSION}/genie_phyopt-${GENIE_VERSION_DOT}-noarch-dkcharmtau.tar.bz2 \
+    -O genie_phyopt-${GENIE_VERSION_DOT}-noarch-dkcharmtau.tar.bz2
+tar xvf genie_phyopt-${GENIE_VERSION_DOT}-noarch-dkcharmtau.tar.bz2
+
+mkdir -p ${OUTPUT_ROOT}/genie_phyopt/${GENIE_VERSION}
+
+rm -r genie_phyopt/v${GENIE_VERSION}/NULL/dkcharmtau/ups
+cp -r genie_phyopt/v${GENIE_VERSION}/NULL/dkcharmtau ${OUTPUT_ROOT}/genie_phyopt/${GENIE_VERSION}/
+
+cd ${RUNDIR}
+rm -r ${TMPDIR}

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM picker24/root_v6_26_10:alma9 AS neut_build
+FROM picker24/root_v6_28_08:alma9 AS neut_build
 WORKDIR /
 
 COPY --from=picker24/cernlib:alma9 /opt/cernlib /opt/cernlib
@@ -29,7 +29,7 @@ WORKDIR /opt/neut
 RUN git rev-parse --short HEAD > /opt/neut/${NEUT_VERSION}/git.shorthash
 
 #final image
-FROM picker24/root_v6_26_10:alma9
+FROM picker24/root_v6_28_08:alma9
 WORKDIR /
 
 COPY --from=neut_build /opt/cernlib /opt/cernlib

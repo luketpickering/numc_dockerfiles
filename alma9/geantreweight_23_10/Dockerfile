@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM picker24/root_v6_26_10:alma9 AS geantrw_build
+FROM picker24/root_v6_28_08:alma9 AS geantrw_build
 WORKDIR /
 
 RUN mkdir -p ~/.ssh/
@@ -35,13 +35,13 @@ WORKDIR /opt/fsifitter-build/${FSIFITTER_VERSION}
 RUN git rev-parse --short HEAD > /opt/fsifitter/${FSIFITTER_VERSION}/git.shorthash
 
 # build GEANTReWeight
-ENV GEANTReWeight_VERSION=23.03
+ENV GEANTReWeight_VERSION=23.10
 
 RUN mkdir -p /opt/geantreweight
 WORKDIR /opt/geantreweight
 RUN --mount=type=ssh git clone git@github.com:t2k-software/GEANTReWeight.git ${GEANTReWeight_VERSION}
 WORKDIR /opt/geantreweight/${GEANTReWeight_VERSION}
-RUN git checkout fix/cmakeconfig
+RUN git checkout develop
 RUN make
 
 WORKDIR /opt
@@ -55,10 +55,10 @@ ENV GEANTReWeight_ROOT=${GEANTREWEIGHT}
 ENV LD_LIBRARY_PATH=${GEANTReWeight_ROOT}:${LD_LIBRARY_PATH}
 
 WORKDIR /opt/geantreweight-build/${GEANTReWeight_VERSION}
-RUN git rev-parse --short HEAD > /opt/fsifitter/${FSIFITTER_VERSION}/git.shorthash
+RUN git rev-parse --short HEAD > /opt/geantreweight/${GEANTReWeight_VERSION}/git.shorthash
 
 # Final image
-FROM picker24/root_v6_26_10:alma9
+FROM picker24/root_v6_28_08:alma9
 WORKDIR /
 
 COPY --from=geantrw_build /opt/fsifitter /opt/fsifitter
@@ -66,7 +66,7 @@ COPY --from=geantrw_build /opt/geantreweight /opt/geantreweight
 
 ENV FSIFITTER_VERSION=22.05 \
     OCT_VERSION=5.2.0 \
-    GEANTReWeight_VERSION=23.03
+    GEANTReWeight_VERSION=23.10
 
 ENV OCT_PREFIX=/opt/fsifitter/${FSIFITTER_VERSION}/octave/${OCT_VERSION}/Linux \
     FSIFITTERROOT=/opt/fsifitter/${FSIFITTER_VERSION} \

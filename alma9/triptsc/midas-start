@@ -1,0 +1,189 @@
+#!/bin/bash
+
+function help_text() {
+  echo -e "midas-t2kgsc <mode> [opts]"
+  echo -e ""
+  echo -e "\t<mode> is required and should be one of:"
+  echo -e "\t\tserver : Start nginx, mhttpd, mserver, and mlogger daemons"
+  echo -e "\t\tremote : Set up environment variables for running remote frontends"
+  echo -e "\t\tshell  : Start a shell, trailing options are ignored"
+  echo -e ""
+  echo -e "\tCommon options:"
+  echo -e "\t\t--expt-name <expt>             : Use <expt> as the MIDAS_EXPT_NAME."
+  echo -e "\t\t--frontend <fe1> [<fe2> [...]] : Start one or more frontend programs"
+  echo -e ""
+  echo -e "\tserver mode options:"
+  echo -e "\t\t--load <odbdump> : Load odbdump from file"
+  echo -e "\t\t                   N.B. this file must be visible inside the container"
+  echo -e "\t\t--port <port>    : Start mserver on port <port>. Default is 1337"
+  echo -e ""
+  echo -e "\tremote mode options:"
+  echo -e "\t\t--server <host>:<port> : Set MIDAS_SERVER_HOST=<host>:<port>"
+  echo -e "\t\t                         forwards all odb commands to mserver on <host>:<port>."
+
+}
+
+MIDAS_ONLINE=/var/online
+MIDAS_EXPT_NAME=t2kgsc
+
+SERVER=0
+MSERVER_PORT=1337
+
+LOAD=0
+MIDAS_OBJDUMP_TO_LOAD=
+
+REMOTE=0
+MIDAS_SERVER_ADDRESS=
+
+FRONTENDS_TO_START=()
+
+case ${1} in
+  server)
+    SERVER=1
+  ;;
+
+  remote)
+    REMOTE=1
+  ;;
+
+  shell)
+    bash
+    exit $?
+  ;;
+
+
+  -?|--help)
+    help_text
+    exit 0
+  ;;
+
+  *)
+    echo "[ERROR]: Unknown mode: ${1}."
+    help_text
+    exit 1
+  ;;
+esac
+shift
+
+while [ ${#} -gt 0 ]; do
+
+  key="$1"
+  case $key in
+
+    --expt-name)
+      MIDAS_EXPT_NAME=${2}
+      echo "[INFO]: Will use experiment name ${MIDAS_EXPT_NAME}"
+
+      shift
+    ;;
+
+    --frontend)
+
+      while [ ${#} -gt 0 ] && [ "${2::1}" != "-" ]; do
+        FRONTENDS_TO_START+=( ${2} )
+        shift
+      done
+      echo "[INFO]: Will start frontends: ${FRONTENDS_TO_START}"
+    ;;
+
+    
+
+    --load)
+
+      if [ "${SERVER}" != "1" ]; then
+        echo "[ERROR]: Option --load is only available in server mode."
+        exit 2;
+      fi
+
+      LOAD=1
+      MIDAS_OBJDUMP_TO_LOAD=${2}
+      echo "[INFO]: Will initialize ODB from odbdump: ${MIDAS_OBJDUMP_TO_LOAD}"
+      shift
+    ;;
+
+    --port)
+
+      if [ "${SERVER}" != "1" ]; then
+        echo "[ERROR]: Option --port is only available in server mode."
+        exit 2;
+      fi
+
+      MSERVER_PORT=${2}
+      echo "[INFO]: mserver will listen on port: ${MSERVER_PORT}"
+      shift
+    ;;
+
+    --server)
+
+      if [ "${REMOTE}" != "1" ]; then
+        echo "[ERROR]: Option --server is only available in server mode."
+        exit 3;
+      fi
+
+      LOAD=1
+      MIDAS_SERVER_ADDRESS=${2}
+      echo "[INFO]: Will connect to mserver running on: ${MIDAS_SERVER_ADDRESS}"
+      shift
+    ;;
+
+    -?|--help)
+      help_text
+      exit 0
+    ;;
+
+    *)
+      echo "[ERROR]: Unknown option: ${1}."
+      help_text
+      exit 1
+    ;;
+
+  esac
+  shift
+done
+
+if [ "${SERVER}" == "1" ]; then
+
+  MIDAS_EXPTAB="${MIDAS_ONLINE}/exptab"
+  echo "${MIDAS_EXPT_NAME} ${MIDAS_ONLINE} root" > ${MIDAS_EXPTAB}
+
+  export MIDAS_EXPT_NAME
+  export MIDAS_EXPTAB
+
+  odbinit -s 5000000
+
+  if [ "${LOAD}" == "1" ]; then
+    odbedit -c "load ${MIDAS_OBJDUMP_TO_LOAD}"
+  else # Create a fresh ODB
+    odbedit -c "mkdir WebServer"
+    odbedit -c "create BOOL \"WebServer/Enable IPv6\""
+    odbedit -c "set \"WebServer/Enable IPv6\" n"
+
+    odbedit -c "mkdir Experiment/Security"
+    odbedit -c "create BOOL \"Experiment/Security/Enable non-localhost RPC\""
+    odbedit -c "set \"Experiment/Security/Enable non-localhost RPC\" y"
+    odbedit -c "create BOOL \"Experiment/Security/Disable RPC hosts check\""
+    odbedit -c "set \"Experiment/Security/Disable RPC hosts check\" y"
+
+    odbedit -c "mkdir Custom"
+  fi
+
+  nginx
+  mlogger -D
+  mserver -D -p ${MSERVER_PORT}
+  mhttpd -D
+  export PS1="\[\e[1m\e[31m\]mserver($(ip -4 -o addr show eth0 | awk '{print $4}' | cut -d "/" -f 1):${MSERVER_PORT})\[\e(B\e[m\]:\[\e[1m\e[32m\]\$(basename \$(pwd)) $\[\e(B\e[m\] "
+else #REMOTE mode
+  MIDAS_SERVER_HOST=${MIDAS_SERVER_ADDRESS}
+
+  export MIDAS_SERVER_HOST
+  export PS1="\[\e[1m\e[31m\]Midas RPC(${MIDAS_SERVER_HOST})\[\e(B\e[m\]:\[\e[1m\e[32m\]\$(basename \$(pwd)) $\[\e(B\e[m\] "
+fi
+
+for FE in ${FRONTENDS_TO_START[@]}; do
+  echo "Starting frontend: ${FE}"
+  ${FE} -D
+done
+
+bash
+
+

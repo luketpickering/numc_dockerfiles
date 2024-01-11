@@ -17,9 +17,11 @@ BEGIN {
   # whether to keep particular isotopes
   # Common
     tgtkeep[1000010010] = 1;   # H1
+    tgtkeep[1000010020] = 1;   # D2
     tgtkeep[1000060120] = 1;   # C12
     tgtkeep[1000080160] = 1;   # O16
     tgtkeep[1000180400] = 1;   # Ar40
+    tgtkeep[1000260560] = 1;   # Fe56
 }
 # decide whether to keep or reject a sub-process x-section based on the
 # name string.  Note picking out "nu:XY" and "tgt:XYZ" is dependent on
