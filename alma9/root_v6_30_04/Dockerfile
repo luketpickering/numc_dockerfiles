@@ -21,31 +21,34 @@ ENV PYTHIA6=/opt/pythia/6.4.28
 FROM pythia6_build AS root_build
 WORKDIR /
 
-RUN mkdir -p /opt /opt/root/build /opt/root/v6-28-08/
+ARG ROOT_VERSION=v6-30-04
+ARG NCORES=1
 
-RUN git clone https://github.com/root-project/root.git /opt/root-src
-WORKDIR /opt/root-src
-RUN git checkout v6-28-08
+RUN mkdir -p /opt /opt/root/build /opt/root/${ROOT_VERSION}/
+
+RUN git clone --depth  1 --branch ${ROOT_VERSION} https://github.com/root-project/root.git /opt/root-src
 WORKDIR /opt/root/build
 RUN cmake /opt/root-src \
     -DCMAKE_CXX_STANDARD=17 \
     -Dminuit2=ON \
     -Dmathmore=ON \
     -Dpythia6=ON -DPYTHIA6_LIBRARY=/opt/pythia/6.4.28/libPythia6.so \
-    -DCMAKE_BUILD_TYPE=RELEASE \
-    -DCMAKE_INSTALL_PREFIX=/opt/root/v6-28-08/ \
+    -DCMAKE_BUILD_TYPE=Release\
+    -DCMAKE_INSTALL_PREFIX=/opt/root/${ROOT_VERSION}/ \
     -Droot7=OFF
-RUN make -j 8
+RUN make -j ${NCORES}
 RUN make install
 
 FROM picker24/buildbox:alma9
+
+ARG ROOT_VERSION=v6-30-04
 
 COPY --from=root_build /opt/pythia /opt/pythia
 ENV PYTHIA6=/opt/pythia/6.4.28
 ENV LD_LIBRARY_PATH=${PYTHIA6}:${LD_LIBRARY_PATH}
 
-COPY --from=root_build /opt/root/v6-28-08/ /opt/root/v6-28-08/
-ENV ROOTSYS=/opt/root/v6-28-08
+COPY --from=root_build /opt/root/${ROOT_VERSION}/ /opt/root/${ROOT_VERSION}/
+ENV ROOTSYS=/opt/root/${ROOT_VERSION}
 ENV PATH=${ROOTSYS}/bin:${PATH} \
     LD_LIBRARY_PATH=${ROOTSYS}/lib:${LD_LIBRARY_PATH} \
     Vdt_ROOT=${ROOTSYS}

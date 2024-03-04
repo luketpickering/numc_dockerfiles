@@ -1,14 +1,13 @@
-FROM picker24/root_v6_28_08:alma9 AS nuwro_build
+FROM picker24/root_v6_30_04:alma9 AS nuwro_build
 WORKDIR /
 
 WORKDIR /opt/
-RUN git clone https://github.com/NuWro/nuwro.git nuwro-src
+RUN git clone --depth  1 --branch nuwro_21.09.2 https://github.com/NuWro/nuwro.git nuwro-src
 WORKDIR /opt/nuwro-src
-RUN git checkout nuwro_21.09.2
 RUN sed -i "s:-lPythia6:-L${PYTHIA6} -lPythia6:g" Makefile
 RUN make
 
-FROM picker24/root_v6_28_08:alma9
+FROM picker24/root_v6_30_04:alma9
 WORKDIR /
 
 RUN mkdir -p /opt/nuwro/21.09.2/src/dis

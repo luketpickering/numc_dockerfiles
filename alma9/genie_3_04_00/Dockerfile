@@ -2,35 +2,33 @@
 FROM picker24/buildbox:alma9 AS lhapdf_build
 WORKDIR /
 
-RUN mkdir -p /opt/lhapdf-src
-WORKDIR /opt/lhapdf-src
+RUN mkdir -p /opt/LHAPDF-src
+WORKDIR /opt/LHAPDF-src
 
-ENV LHAPDF_VERS=5.9.1
+ENV LHAPDF_VERS=6.5.1
 
-RUN wget https://lhapdf.hepforge.org/downloads/?f=old/lhapdf-${LHAPDF_VERS}.tar.gz \
-         -O lhapdf-${LHAPDF_VERS}.tar.gz \
-    && tar -zxvf lhapdf-${LHAPDF_VERS}.tar.gz
+RUN wget https://lhapdf.hepforge.org/downloads/LHAPDF-${LHAPDF_VERS}.tar.gz \
+         -O LHAPDF-${LHAPDF_VERS}.tar.gz \
+    && tar -zxvf LHAPDF-${LHAPDF_VERS}.tar.gz
 
-WORKDIR /opt/lhapdf-src/lhapdf-5.9.1/config/
+WORKDIR /opt/LHAPDF-src/LHAPDF-6.5.1/config/
 RUN  wget -O config.guess 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD' \
  && wget -O config.sub 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD'
 
-RUN mkdir -p /opt/lhapdf-build /opt/lhapdf/${LHAPDF_VERS}
-WORKDIR /opt/lhapdf-build
+RUN mkdir -p /opt/LHAPDF-build /opt/LHAPDF/${LHAPDF_VERS}
+WORKDIR /opt/LHAPDF-build
 
-ENV FCFLAGS="-std=legacy"
-RUN /opt/lhapdf-src/lhapdf-${LHAPDF_VERS}/configure \
-                                    --prefix=/opt/lhapdf/${LHAPDF_VERS} \
-                                    --disable-old-ccwrap \
-                                    --disable-pyext \
-    && make install -j 3
+RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN /opt/LHAPDF-src/LHAPDF-${LHAPDF_VERS}/configure \
+                                    --prefix=/opt/LHAPDF/${LHAPDF_VERS} \
+    && make install -j 4
 
-FROM picker24/root_v6_28_08:alma9 AS genie_build
+FROM picker24/root_v6_30_04:alma9 AS genie_build
 WORKDIR /
 
-COPY --from=lhapdf_build /opt/lhapdf/ /opt/lhapdf/
-ENV LHAPDF_VERS=5.9.1
-ENV LHAPATH=/opt/lhapdf/${LHAPDF_VERS}
+COPY --from=lhapdf_build /opt/LHAPDF/ /opt/LHAPDF/
+ENV LHAPDF_VERS=6.5.1
+ENV LHAPATH=/opt/LHAPDF/${LHAPDF_VERS}
 ENV PATH=${LHAPATH}/bin:${PATH}
 ENV LD_LIBRARY_PATH=${LHAPATH}/lib:${LD_LIBRARY_PATH}
 ENV LHAPDF_INC=${LHAPATH}/include
@@ -40,22 +38,17 @@ ENV GENIE_VERSION=3_04_00
 ENV GENIE_REWEIGHT_VERSION=1_02_02
 
 WORKDIR /opt/
-RUN git clone https://github.com/GENIE-MC/Generator.git Generator-src
-WORKDIR /opt/Generator-src
-RUN git checkout R-${GENIE_VERSION}
-WORKDIR /opt/
-RUN git clone https://github.com/luketpickering/Reweight.git Reweight-src
-WORKDIR /opt/Reweight-src
-# RUN git checkout R-${GENIE_REWEIGHT_VERSION}
+RUN git clone --depth 1 --branch R-${GENIE_VERSION} https://github.com/GENIE-MC/Generator.git Generator-src
+RUN git clone --depth 1 https://github.com/GENIE-MC/Reweight.git Reweight-src
 
 ENV GENIE=/opt/Generator-src
 
 WORKDIR /opt/Generator-src
 RUN mkdir -p /opt/genie/${GENIE_VERSION} \
- && ./configure --prefix=/opt/genie/${GENIE_VERSION} \
- && make -j 3 && make install
+ && ./configure --prefix=/opt/genie/${GENIE_VERSION} --enable-debug --enable-lhapdf6 \
+ && make -j 4 && make install
 
-ENV GENIE_REWEIGHT=/opt/Reweight-src/
+ENV GENIE_REWEIGHT=/opt/Reweight-src
 WORKDIR /opt/Reweight-src
 RUN make && make install
 
@@ -71,6 +64,14 @@ RUN cp -r /opt/Generator-src/config ${GENIE}/
 RUN mkdir -p ${GENIE}/data/
 RUN cp -r /opt/Generator-src/data/evgen ${GENIE}/data/
 
+RUN mv ${GENIE}/config/Messenger_whisper.xml ${GENIE}/config/Messenger.xml
+RUN sed -i '$ d' ${GENIE}/config/Messenger.xml
+RUN echo '  <priority msgstream="ResonanceDecay">      FATAL </priority>' >> ${GENIE}/config/Messenger.xml
+RUN echo '  <priority msgstream="Pythia6Decay">        FATAL </priority>' >> ${GENIE}/config/Messenger.xml
+RUN echo '  <priority msgstream="INukeNucleonCorr">    FATAL </priority>' >> ${GENIE}/config/Messenger.xml
+RUN echo '  <priority msgstream="gevgen_fnal">         FATAL </priority>' >> ${GENIE}/config/Messenger.xml
+RUN echo '</messenger_config>' >> ${GENIE}/config/Messenger.xml
+
 RUN mkdir -p ${GENIE}/src/make/
 RUN cp /opt/Generator-src/src/make/Make.config_no_paths \
                       ${GENIE}/src/make/
@@ -79,11 +80,11 @@ WORKDIR ${GENIE}/src
 RUN ln -s -t . ../include/GENIE/*/
 
 ## Final container
-FROM picker24/root_v6_28_08:alma9
+FROM picker24/root_v6_30_04:alma9
 
-COPY --from=lhapdf_build /opt/lhapdf /opt/lhapdf
-ENV LHAPDF_VERS=5.9.1 
-ENV LHAPATH=/opt/lhapdf/${LHAPDF_VERS}
+COPY --from=lhapdf_build /opt/LHAPDF /opt/LHAPDF
+ENV LHAPDF_VERS=6.5.1 
+ENV LHAPATH=/opt/LHAPDF/${LHAPDF_VERS}
 ENV PATH=${LHAPATH}/bin:${PATH} \
     LD_LIBRARY_PATH=${LHAPATH}/lib:${LD_LIBRARY_PATH} \
     LHAPDF_INC=${LHAPATH}/include \
@@ -94,6 +95,9 @@ ENV GENIE_VERSION=3_04_00 \
     GENIE_REWEIGHT_VERSION=1_02_02
 ENV GENIE="/opt/genie/${GENIE_VERSION}"
 ENV GENIE_REWEIGHT=${GENIE}
+
+# useful for debugging
+COPY --from=genie_build /opt/Generator-src /opt/Generator-src
 
 RUN mkdir -p /opt/genie/utils/
 ADD  genie_fetch_tune \
