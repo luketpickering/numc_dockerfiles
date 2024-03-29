@@ -1,0 +1,46 @@
+# syntax=docker/dockerfile:1
+FROM picker24/root_v5_34_32:centos7-x86_64 as hlpsyche_build
+WORKDIR /
+
+#ND280ARCH=aarch64
+#ND280ARCH=x86_64
+ARG ND280ARCH=x86_64
+
+ENV HIGHLAND2MASTERVER=2.81
+
+ENV ND280_ROOT=/opt/nd280
+
+RUN mkdir -p ${ND280_ROOT}
+WORKDIR ${ND280_ROOT}
+
+RUN mkdir -p ~/.ssh/
+RUN ssh-keyscan git.t2k.org > ~/.ssh/known_hosts
+
+RUN --mount=type=ssh git clone git@git.t2k.org:nd280/pilot/nd280SoftwarePilot.git
+WORKDIR ${ND280_ROOT}/nd280SoftwarePilot
+RUN git checkout stable && ./configure.sh
+
+ENV ND280_GIT="git@git.t2k.org:nd280/"
+ENV ND280_DOWNLOADS="http://nd280.lancs.ac.uk/downloads"
+
+ENV GIT_SSH_COMMAND="ssh -o ControlMaster=auto -o ControlPath=/tmp/%C -o ControlPersist=3600 "
+
+ENV ND280PILOT_ROOT=${ND280_ROOT}
+ENV PATH=${ND280PILOT_ROOT}/nd280SoftwarePilot/scripts:${PATH}
+ENV CMAKE_PREFIX_PATH=${ND280PILOT_ROOT}:${CMAKE_PREFIX_PATH}
+ENV ND280_SYSTEM=Linux-CentOS_7-gcc_4.8-${ND280ARCH}
+
+WORKDIR ${ND280_ROOT}
+
+RUN --mount=type=ssh git clone git@git.t2k.org:nd280/highland2Software/highland2SoftwarePilot.git
+WORKDIR ${ND280_ROOT}/highland2SoftwarePilot
+RUN git checkout master
+
+ENV PATH=${ND280_ROOT}/highland2SoftwarePilot/scripts:${PATH}
+ENV ND280PROD=prod6T
+ENV ND280SOFTWAREPOLICY_ROOT=${ND280_ROOT}/nd280SoftwarePolicy_master
+
+RUN --mount=type=ssh highland-install -c -p ${ND280PROD} ${HIGHLAND2MASTERVER}
+RUN --mount=type=ssh nd280-update-versions
+RUN --mount=type=ssh highland_set_use_psycheROOT -r psycheROOT
+RUN --mount=type=ssh highland-install -p ${ND280PROD} ${HIGHLAND2MASTERVER}

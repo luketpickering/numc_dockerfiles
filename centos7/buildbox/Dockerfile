@@ -7,7 +7,7 @@ RUN yum -y update && yum -y install epel-release && yum repolist \
                    wget openssh-clients openssl-devel \
                    libxml2-devel gmp-devel gsl-devel bzip2-devel pcre-devel xz-devel zlib-devel \
                    freetype-devel lz4-devel xz-devel gettext \
-                   ca-certificates
+                   ca-certificates libcurl-devel
 
 RUN wget https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.40.0.tar.gz
 RUN tar -zxvf git-2.40.0.tar.gz
@@ -25,7 +25,7 @@ RUN yum -y update && yum -y install epel-release && yum repolist \
                    mesa-libGLU-devel mesa-libGLw glew-devel motif-devel libpng-devel libjpeg-turbo-devel ftgl-devel \
                    libxml2-devel gmp-devel gsl-devel log4cpp-devel bzip2-devel pcre-devel xz-devel zlib-devel \
                    freetype-devel fftw-devel blas-devel lapack-devel lz4-devel xz-devel \
-                   vim nano gdb csh tcsh ed quota python-devel patch \
+                   vim nano gdb csh tcsh ed quota python-devel python3-devel patch \
                    ca-certificates ncurses-devel
 
 COPY --from=gitupdate /usr/local /usr/local
