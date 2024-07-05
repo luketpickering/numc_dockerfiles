@@ -1,14 +1,15 @@
 #!/bin/bash
 
-if [ ${BASH_VERSINFO[0]} -le 2 ]; then
+(return 0 2>/dev/null) && sourced=1 || sourced=0
+
+if [ "${sourced}" == "0" ]; then
   echo "[ERROR]: You must source this script (not run it in a sub-shell). Use like $ source genie_set_tune.sh <tune_id>"
   exit 1
 fi
 
-
 GENIE_XSEC_TUNE=${1}
 
-if [ ! -e /opt/genie_xsec/${GENIE_VERSION}/${GENIE_XSEC_TUNE}/gxspl-min.xml.gz ]; then
+if [ ! -e /opt/genie_xsec/${GENIE_XSEC_VERSION}/${GENIE_XSEC_TUNE}/gxspl-min.xml.gz ]; then
   echo "Do not have inputs for tune ${GENIE_XSEC_TUNE}. Consider using /opt/genie/utils/genie_fetch_tune.sh to grab the tune."
   return 1
 fi
@@ -20,7 +21,7 @@ export GENIE_PHYOPT_DIR=/opt/genie_phyopt/${GENIE_VERSION}/dkcharmtau
 
 export GXMLPATH=${GENIE_PHYOPT_DIR}:${GENIE_XSEC_DIR}
 
-echo "Set GENIE tune environment for version ${GENIE_VERSION}:"
+echo "Set GENIE tune environment:"
 echo -e "\t GENIE_XSEC_TUNE: ${GENIE_XSEC_TUNE}"
 echo -e "\t  GENIE_XSEC_DIR: ${GENIE_XSEC_DIR}"
 echo -e "\t GENIE_XSEC_FILE: ${GENIE_XSEC_FILE}"

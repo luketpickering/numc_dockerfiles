@@ -19,14 +19,13 @@ COPY --from=picker24/hepmc3_master:alma9 /opt/HepMC3/ /opt/HepMC3/
 
 ENV CMAKE_PREFIX_PATH=/opt/HepMC3/git_master:${CMAKE_PREFIX_PATH}
 
-RUN dnf install -y fmt-devel spdlog-devel eigen3-devel
-
 WORKDIR /opt
 RUN git clone --depth=1 https://github.com/NuHepMC/cpputils.git NuHepMC_CPPUtils-src
 WORKDIR /opt/NuHepMC_CPPUtils-build
 RUN cmake /opt/NuHepMC_CPPUtils-src \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_INSTALL_PREFIX=/opt/NuHepMC_CPPUtils/git_master \
+  -DNuHepMC_CPPUtils_PYTHON_ENABLED=ON \
   && make install -j 4
 WORKDIR /opt/NuHepMC_CPPUtils-src
 RUN git rev-parse --short HEAD > /opt/NuHepMC_CPPUtils/git_master/git.shorthash
@@ -137,16 +136,14 @@ COPY --from=picker24/hepmc3_master:alma9 /opt/HepMC3-src/ /opt/HepMC3-src/
 
 ENV NuHepMC_CPPUtils_ROOT=/opt/NuHepMC_CPPUtils/git_master \
     ProSelecta_ROOT=/opt/ProSelecta/git_master \
-    ProSelecta_INCLUDE_PATH=/opt/ProSelecta/git_master/include:/opt/HepMC3/git_master/include \
+    ProSelecta_INCLUDE_PATH=/opt/ProSelecta/git_master/include:/opt/NuHepMC_CPPUtils/git_master/include:/opt/HepMC3/git_master/include:/usr/include/eigen3 \
     Prob3plusplus_ROOT=/opt/Prob3plusplus/git_master
 ENV PATH=${ProSelecta_ROOT}/bin:${NuHepMC_CPPUtils_ROOT}/bin:/opt/HepMC3/git_master/bin:/opt/python/extra/bin:${PATH} \
-    LD_LIBRARY_PATH=${ProSelecta_ROOT}/lib:${NuHepMC_CPPUtils_ROOT}/lib:/opt/yaml-cpp/v0.8.0/lib:/opt/nvconv/git_master/lib:/opt/nuwroconv/git_master/lib:/opt/HepMC3/git_master/lib64:${LD_LIBRARY_PATH} \
-    CMAKE_PREFIX_PATH=/opt/Catch2/v3.5.2:/opt/pybind11/v2.9.2:/opt/yaml-cpp/v0.8.0:/opt/nvconv/git_master:/opt/nuwroconv/git_master:/opt/HepMC3/git_master:${CMAKE_PREFIX_PATH} \
-    PYTHONPATH=/opt/ProSelecta/git_master/python/3.9:/opt/NuHepMC_CPPUtils/git_master/python:/opt/HepMC3/git_master/lib64/python3.9/site-packages:/opt/python/extra:${PYTHONPATH} \
+    LD_LIBRARY_PATH=${ProSelecta_ROOT}/lib:${NuHepMC_CPPUtils_ROOT}/lib:/opt/yaml-cpp/v0.8.0/lib:/opt/nvconv/git_master/lib:/opt/nuwroconv/git_master/lib:${Prob3plusplus_ROOT}/lib:/opt/HepMC3/git_master/lib64:${LD_LIBRARY_PATH} \
+    CMAKE_PREFIX_PATH=/opt/Catch2/v3.5.2:/opt/pybind11/v2.9.2:/opt/yaml-cpp/v0.8.0:/opt/nvconv/git_master:/opt/nuwroconv/git_master:${Prob3plusplus_ROOT}:/opt/HepMC3/git_master:${CMAKE_PREFIX_PATH} \
+    PYTHONPATH=/opt/ProSelecta/git_master/python/3.9:/opt/NuHepMC_CPPUtils/git_master/python:/opt/HepMC3/git_master/lib64/python3.9/site-packages:${ROOTSYS}/lib/:${PYTHONPATH} \
     JUPYTERLAB_DIR=/opt/python/extra/share/jupyter/lab
 
-RUN dnf install -y fmt-devel spdlog-devel eigen3-devel libasan libubsan \
-    && pip3 install jupyterlab pandas plotly matplotlib \
-                    dash dash-mantine-components dash-bootstrap-components \
-                    tqdm scipy \
-                    -t /opt/python/extra/
+RUN pip3 install jupyterlab \
+    && pip3 install numpy scipy pandas polars matplotlib \
+    && pip3 install tqdm ipywidgets

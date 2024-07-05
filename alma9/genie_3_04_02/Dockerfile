@@ -34,8 +34,8 @@ ENV LD_LIBRARY_PATH=${LHAPATH}/lib:${LD_LIBRARY_PATH}
 ENV LHAPDF_INC=${LHAPATH}/include
 ENV LHAPDF_LIB=${LHAPATH}/lib
 
-ENV GENIE_VERSION=3_04_00
-ENV GENIE_REWEIGHT_VERSION=1_02_02
+ENV GENIE_VERSION=3_04_02
+ENV GENIE_REWEIGHT_VERSION=1_02_04
 
 WORKDIR /opt/
 RUN git clone --depth 1 --branch R-${GENIE_VERSION} https://github.com/GENIE-MC/Generator.git Generator-src
@@ -83,21 +83,18 @@ RUN ln -s -t . ../include/GENIE/*/
 FROM picker24/root_v6_30_04:alma9
 
 COPY --from=lhapdf_build /opt/LHAPDF /opt/LHAPDF
-ENV LHAPDF_VERS=6.5.1 
-ENV LHAPATH=/opt/LHAPDF/${LHAPDF_VERS}
-ENV PATH=${LHAPATH}/bin:${PATH} \
-    LD_LIBRARY_PATH=${LHAPATH}/lib:${LD_LIBRARY_PATH} \
-    LHAPDF_INC=${LHAPATH}/include \
-    LHAPDF_LIB=${LHAPATH}/lib
+ENV LHAPDF_VERS=6.5.1 \
+    LHAPATH=/opt/LHAPDF/6.5.1 \
+    PATH=/opt/LHAPDF/6.5.1/bin:${PATH} \
+    LD_LIBRARY_PATH=/opt/LHAPDF/6.5.1/lib:${LD_LIBRARY_PATH} \
+    LHAPDF_INC=/opt/LHAPDF/6.5.1/include \
+    LHAPDF_LIB=/opt/LHAPDF/6.5.1/lib \
+    GENIE_VERSION=3_04_02 \
+    GENIE_REWEIGHT_VERSION=1_02_04 \
+    GENIE=/opt/genie/3_04_02 \
+    GENIE_REWEIGHT=/opt/genie/3_04_02
 
 COPY --from=genie_build /opt/genie /opt/genie
-ENV GENIE_VERSION=3_04_00 \
-    GENIE_REWEIGHT_VERSION=1_02_02
-ENV GENIE="/opt/genie/${GENIE_VERSION}"
-ENV GENIE_REWEIGHT=${GENIE}
-
-# useful for debugging
-COPY --from=genie_build /opt/Generator-src /opt/Generator-src
 
 RUN mkdir -p /opt/genie/utils/
 ADD  genie_fetch_tune \
@@ -106,18 +103,16 @@ ADD  genie_fetch_tune \
      gxspl.min.awk \
   /opt/genie/utils/
 
+RUN /opt/genie/utils/genie_fetch_tune 3_04_00 AR23_20i_00_000 \
+    && /opt/genie/utils/genie_fetch_tune 3_04_00 G18_10a_02_11a \
+    && /opt/genie/utils/genie_fetch_tune 3_04_00 G21_11a_00_000
+
 ENV PATH=${GENIE}/bin:/opt/genie/utils/:${PATH} \
     LD_LIBRARY_PATH=${GENIE_REWEIGHT}/lib:${GENIE}/lib:${LD_LIBRARY_PATH} \
-    ROOT_INCLUDE_PATH=${GENIE}/include/GENIE:${ROOT_INCLUDE_PATH}
-
-RUN /opt/genie/utils/genie_fetch_tune ${GENIE_VERSION} AR23_20i_00_000 \
-    && /opt/genie/utils/genie_fetch_tune ${GENIE_VERSION} G18_10a_02_11b \
-    && /opt/genie/utils/genie_fetch_tune ${GENIE_VERSION} G21_11a_00_000
-
-ENV GENIE_XSEC_TUNE=AR23_20i_00_000 \
+    ROOT_INCLUDE_PATH=${GENIE}/include/GENIE:${ROOT_INCLUDE_PATH}\
+    GENIE_XSEC_VERSION=3_04_00 \
+    GENIE_XSEC_TUNE=AR23_20i_00_000 \
     GENIE_XSEC_DIR=/opt/genie_xsec/3_04_00/AR23_20i_00_000 \
     GENIE_XSEC_FILE=/opt/genie_xsec/3_04_00/AR23_20i_00_000/gxspl-min.xml.gz \
-    GENIE_REWEIGHT=/opt/genie/3_04_00 \
-    GENIE_VERSION=3_04_00 \
     GENIE_PHYOPT_DIR=/opt/genie_phyopt/3_04_00/dkcharmtau \
     GXMLPATH=/opt/genie_phyopt/3_04_00/dkcharmtau:/opt/genie_xsec/3_04_00/AR23_20i_00_000

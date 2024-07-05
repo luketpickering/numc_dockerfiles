@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ ${#} != 0 ] || [ -z ${GENIE_XSEC_VERSION} ]; then
+  if [ ${1} == "-?" ] || [ ${1} == "--help" ] || [ ${1} == "-h" ]; then
+    echo "[RUNLIKE]: ${0} <GENIE_VERSION=3_04_00>"
+    exit 1
+  fi
+
+  GENIE_XSEC_VERSION=${1}
+fi
+
+if [ -e /opt/genie_xsec/${GENIE_XSEC_VERSION} ]; then
+  ls /opt/genie_xsec/${GENIE_XSEC_VERSION}/
+else
+  echo "[ERROR]: Found no tune information in /opt/genie_xsec/${GENIE_XSEC_VERSION}"
+  echo "Known GENIE versions: "
+  echo -e "\t $(ls /opt/genie_xsec/)"
+fi
+

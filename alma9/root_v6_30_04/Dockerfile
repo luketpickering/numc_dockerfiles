@@ -31,9 +31,12 @@ WORKDIR /opt/root/build
 RUN cmake /opt/root-src \
     -DCMAKE_CXX_STANDARD=17 \
     -Dminuit2=ON \
+    -Dminuit2_omp=ON \
+    -Darrow=ON \
+    -Dclad=OFF \
     -Dmathmore=ON \
     -Dpythia6=ON -DPYTHIA6_LIBRARY=/opt/pythia/6.4.28/libPythia6.so \
-    -DCMAKE_BUILD_TYPE=Release\
+    -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/opt/root/${ROOT_VERSION}/ \
     -Droot7=OFF
 RUN make -j ${NCORES}
@@ -44,11 +47,12 @@ FROM picker24/buildbox:alma9
 ARG ROOT_VERSION=v6-30-04
 
 COPY --from=root_build /opt/pythia /opt/pythia
-ENV PYTHIA6=/opt/pythia/6.4.28
-ENV LD_LIBRARY_PATH=${PYTHIA6}:${LD_LIBRARY_PATH}
 
-COPY --from=root_build /opt/root/${ROOT_VERSION}/ /opt/root/${ROOT_VERSION}/
+COPY --from=root_build /opt/root/${ROOT_VERSION} /opt/root/${ROOT_VERSION}
+
 ENV ROOTSYS=/opt/root/${ROOT_VERSION}
 ENV PATH=${ROOTSYS}/bin:${PATH} \
-    LD_LIBRARY_PATH=${ROOTSYS}/lib:${LD_LIBRARY_PATH} \
-    Vdt_ROOT=${ROOTSYS}
+    PYTHIA6=/opt/pythia/6.4.28 \
+    LD_LIBRARY_PATH=${ROOTSYS}/lib:/opt/pythia/6.4.28:${LD_LIBRARY_PATH} \
+    Vdt_ROOT=${ROOTSYS} \
+    PYTHONPATH=${ROOTSYS}/lib/:${PYTHONPATH}

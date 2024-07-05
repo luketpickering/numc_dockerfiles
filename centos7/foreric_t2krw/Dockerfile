@@ -78,7 +78,8 @@ RUN git checkout 22.05
 RUN mkdir -p /opt/niwgreweight-build
 WORKDIR /opt/niwgreweight-build
 RUN cmake /opt/niwgreweight \
-  -DCMAKE_INSTALL_PREFIX=/opt/niwgreweight/${NIWG_VERSION}
+  -DCMAKE_INSTALL_PREFIX=/opt/niwgreweight/${NIWG_VERSION} \
+  -DCMAKE_CXX_STANDARD=11
 RUN make VERBOSE=1 && make install
 
 ENV NIWG_ROOT="/opt/niwgreweight/${NIWG_VERSION}"
@@ -104,7 +105,8 @@ RUN git checkout 22.05
 RUN mkdir -p /opt/t2kreweight-build
 WORKDIR /opt/t2kreweight-build
 RUN cmake /opt/t2kreweight-src \
-  -DCMAKE_INSTALL_PREFIX=/opt/t2kreweight/${T2KREWEIGHT_VERSION} 
+  -DCMAKE_INSTALL_PREFIX=/opt/t2kreweight/${T2KREWEIGHT_VERSION} \
+  -DCMAKE_CXX_STANDARD=11
 RUN make && make install
 
 # new layer

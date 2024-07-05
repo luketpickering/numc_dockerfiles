@@ -1,0 +1,475 @@
+#!/bin/bash
+
+SUBCOMMAND=${1}
+
+case $SUBCOMMAND in
+
+  neut)
+less << 'EOF' |
+# NEUT
+
+Reference: [https://link.springer.com/article/10.1140/epjs/s11734-021-00287-7](https://link.springer.com/article/10.1140/epjs/s11734-021-00287-7)
+
+This container image has NEUT v5.8.0, which is the latest 'production'
+version, including some new electron-scatering probe developments.
+
+## nu-A generator
+
+The main neutrino generator is run with the neutroot2 program. Run like:
+
+  $ neutroot2 <config.card> [<output.root>]
+
+The container ships some example configuration cards at ${NEUT_CARDS}. A good
+one to start with is:
+
+  /opt/neut/5.8.0/share/neut/Cards/neut_5.4.0_1GeV_C.card
+
+The most important options for generating different experimental 
+configurations are:
+
+  C The number of events to generator
+  EVCT-NEVT  10000
+
+  C Edit the below to specify a ROOT flux file/histogram
+  EVCT-MPV 3
+  EVCT-FILENM '/path/to/file.root'
+  EVCT-HISTNM 'numu_flux'
+  EVCT-INMEV 0
+
+  C Modify the below to change the nuclear target, optionally with some number
+  C of free protons. C, CH, O, H2O are possible, compound targets are not.
+  NEUT-NUMBNDN 6
+  NEUT-NUMBNDP 6
+  NEUT-NUMFREP 0
+  NEUT-NUMATOM 12
+
+The output file produced can be analysed directly, but we strongly recommend
+using NUISANCE2 or NUISANCE3 to perform any analysis on neutvect files.
+
+See help nuisance2 for some helper scripts for configuring experimental 
+parameters for different generators with a common set of arguments.
+
+## Pi-A generator
+## N-A generator
+
+EOF
+markdown_py | lynx -stdin
+  ;;
+
+  nuwro)
+cat << 'EOF'
+# NuWro
+
+Repository: [https://github.com/NuWro/nuwro](https://github.com/NuWro/nuwro)
+User Guide: [https://nuwro.github.io/user-guide/](https://nuwro.github.io/user-guide/)
+Reference: [https://www.sciencedirect.com/science/article/pii/S0920563212003532?via%3Dihub](https://www.sciencedirect.com/science/article/pii/S0920563212003532?via%3Dihub)
+Version: 21.09.02
+
+## nu-A Generator
+
+The main neutrino generator is run with the nuwro program. Run like:
+
+  $ nuwro -i <params.txt> [-p paramkey=value] [-o <out.root>]
+
+Find the default params.txt at:
+
+  /opt/nuwro/21.09.2/data/params.txt
+
+NuWro uses auxilliary target files with pre-defined target specifications,
+it also provides some pre-defined experimental fluxes, but can be run with
+a root histogram neutrino energy spectra as well. These can be found, 
+respectively in:
+
+  /opt/nuwro/21.09.2/data/target/
+  /opt/nuwro/21.09.2/data/beam/
+
+To simulate for some specific experiment, we recommend taking a local copy
+of the default params.txt file and then using the pre-defined target and beam 
+files by including lines like below in a modified params.txt:
+
+  @beam/ANL.txt
+  @target/H.txt
+
+@ includes are resolved relative to ${NUWRO}/data
+
+To use a flux histogram from a root file, we recommend passing extra parameters 
+on the command line like:
+
+$ nuwro -i params.txt -p beam_type=5 \
+                      -p beam_particle=14 \
+                      -p "beam_direction=0 0 1" \
+                      -p beam_inputroot=/path/to/file.root \
+                      -p beam_inputroot_flux=numu_flux
+
+
+See help nuisance2 for some helper scripts for configuring experimental 
+parameters for different generators with a common set of arguments.
+
+## pi-A and N-A Generator
+
+To run NuWro hadron-scattering, you can use the kaskada program directly. A
+default set of parameters can be found at:
+
+  /opt/nuwro/21.09.2/data/kaskada.txt
+
+Run like:
+
+  $ kaskada -i kaskada.txt [-p paramkey=value] [-o <out.root>]
+
+EOF
+markdown_py | lynx -stdin
+  ;;
+
+  genie)
+cat << 'EOF'
+# GENIE
+
+Website: [http://www.genie-mc.org](http://www.genie-mc.org)
+Repository: [https://github.com/GENIE-MC](https://github.com/GENIE-MC)
+Version: v3_04_02
+ReWeight Version: Version: v1_02_04
+
+A number of environment variables and inputs affect the way GENIE works and we
+provide some helper functions for swapping out inputs consistently.
+
+The container environment starts configured as below:
+
+  GENIE=/opt/genie/3_04_02
+  GENIE_REWEIGHT=/opt/genie/3_04_02
+  GENIE_VERSION=3_04_02
+  GENIE_REWEIGHT_VERSION=1_02_04
+
+  GENIE_XSEC_VERSION=3_04_00
+  GENIE_XSEC_DIR=/opt/genie_xsec/3_04_00/AR23_20i_00_000
+  GENIE_XSEC_FILE=/opt/genie_xsec/3_04_00/AR23_20i_00_000/gxspl-min.xml.gz
+  GENIE_XSEC_TUNE=AR23_20i_00_000
+  GENIE_PHYOPT_DIR=/opt/genie_phyopt/3_04_00/dkcharmtau
+
+where we can see the tune that comes preloaded is AR23_20i_00_000. The container
+also provides G18_10a_02_11a and G21_11a_00_000 inputs. We can set up a new set
+of tunes with the /opt/genie/utils/genie_set_tune script, like
+
+  $ source genie_set_tune G18_10a_02_11a
+
+Looking at the environment again we now see:
+
+  GENIE_XSEC_DIR=/opt/genie_xsec/3_04_00/G18_10a_02_11a
+  GENIE_XSEC_FILE=/opt/genie_xsec/3_04_00/G18_10a_02_11a/gxspl-min.xml.gz
+  GENIE_XSEC_TUNE=G18_10a_02_11a
+
+## nu-A Generator
+
+The main generator program is gevgen and can be found at:
+
+  /opt/genie/3_04_02/bin/gevgen
+
+At the time of writing, gevgen --help has been broken for 2 years. Our 
+recommendation is to read the Physics and User Manual, which is currently a dead
+link from the official website.
+
+See help nuisance2 for some helper scripts for configuring experimental 
+parameters for different generators with a common set of arguments.
+
+EOF
+markdown_py | lynx -stdin
+  ;;
+
+  gibuu)
+cat << 'EOF'
+# GiBUU
+
+Website: [https://gibuu.hepforge.org](https://gibuu.hepforge.org)
+Version: release2023 + jxi24 & sjgardiner NuHepMC patches
+
+The main GiBUU generator program is called GiBUU.x and can be found at:
+
+  /opt/GiBUU/jxi24_main/bin/GiBUU.x
+
+The inputs can be found in 
+
+  GiBUU_BUUINPUTS=/opt/GiBUU/jxi24_main/buuinput
+
+Some example job cards can be found in:
+
+  GiBUU_JOBCARDS=/opt/GiBUU/jxi24_main/jobCards
+
+This version is built against rootTuple allowing for ROOT-native output. A WIP
+patch for NuHepMC output is also included.
+
+EOF
+markdown_py | lynx -stdin
+  ;;
+
+  achilles)
+cat << 'EOF'
+# ACHILLES
+
+Repository: [https://github.com/AchillesGen/Achilles](https://github.com/AchillesGen/Achilles)
+Reference: [https://journals.aps.org/prd/abstract/10.1103/PhysRevD.107.033007](https://journals.aps.org/prd/abstract/10.1103/PhysRevD.107.033007)
+
+The main Achilles executable can be found: 
+
+  /opt/achilles/git_master/bin/achilles
+
+An example configuration yaml file can be found:
+
+  /opt/achilles/git_master/share/Achilles/data/default/run.yml
+
+This version has been built with ROOT support for reading in root histogram
+fluxes, and can output NuHepMC for reading into NUISANCE2 or NUISANCE3.
+
+EOF
+markdown_py | lynx -stdin
+  ;;
+
+  nusystematics)
+cat << 'EOF'
+# NuSystematics
+
+Repository: [https://github.com/NuSystematics/nusystematics](https://github.com/NuSystematics/nusystematics)
+
+NuSystematics is a systematic variation framework used by DUNE and SBN. It
+provides some ad hoc uncertainty implementations as well as a wrapper interface
+to GENIE ReWeight.
+
+NUISANCE2 can use NuSystematics in a limited form.
+EOF
+markdown_py | lynx -stdin
+  ;;
+
+  t2kreweight)
+cat << 'EOF'
+# T2KReWeight
+
+T2KReWeight is a systematic variation framework used by T2K and HyperK. It
+presents a thin wrapper interface to various uncertainty tools used on T2K 
+(NEUTReWeight, NIWGReWeight, GEANTReWeight, GENIE2ReWeight) ReWeight.
+
+NUISANCE2 and NUISANCE3 can fully use T2KReWeight. Unfortunately because it is
+currently closed source, it is difficult for non-experts to use.
+EOF
+markdown_py | lynx -stdin
+  ;;
+  nuisance2)
+cat << 'EOF'
+# NUISANCE2
+
+NUISANCE is a neutrino MC-data comparison and tuning framework. It also provides
+conversion from generator-specific event vector formats to a simple 'flat' ROOT
+tree format that can be used for writing more generator-agnostic truth analyses.
+
+NUISANCE2 provides a few workflows that can be mostly used as a 'black box',
+modifying the details of any workflow is an expert-level task and the main
+motivating factor for NUISANCE3 development.
+
+Below is some terse documentation on three workflows that NUISANCE2 can help.
+We will not go into tuning workflows with NUISANCE2, as I would recommend
+starting any new efforts in NUSIANCE3.
+
+## 'Preparing' files
+
+NUISANCE needs to be able to determine the flux-averaged total cross section of
+every input file. Some generator vectors do not carry flux information with 
+them. There are some PrepareXXX executables that can be used to add in the
+information that NUISANCE2 requires. Most of the applications can be run with
+just a --help flag, to give some idea of the arguments expected.
+
+For example, if you want to 'prepare' a NEUT neutvect file, you might run
+something like:
+
+  $ PrepareNEUT -i myinput.neutvect.root -f flux.root,flux_histname -o myinput.neutvect.prep.root
+
+In following steps, you would use the myinput.neutvect.prep.root file.
+
+## Making Flat Trees
+
+The most common community use case for NUISANCE2 is converting 
+generator-specific event vectors to a common analysis format. This is achieved
+with the nuisflat program as below:
+
+  $ nuisflat -i NEUT:myinput.neutvect.prep.root -o myinput.flat.root
+
+The <NEUT> identifier here should be replaced depending on the input file type.
+The following file types are supported:
+
+  NEUT
+  NuWro
+  GENIE
+  GiBUU
+  NuHepMC
+  FLATTREE 
+
+If you need to vary any systematic parameters and include the combined response 
+weight in the flat tree, you must use an input xml file as described in the
+next section, and should use
+  
+  <sample name="GenericVectors" />
+
+to write an equivalent flat tree output as nuisflat would.
+
+## Performing Data Comparisons
+
+The nuiscomp program is the program used to compare MC predictions to data.
+
+It takes an xml configuration file as input that specifies the samples and
+MC vectors to use, and any systematic variations that should be applied to the
+input file. A simple example might look like below:
+
+  <nuisance>
+
+    <parameter type="genie_parameter" name="MaCCQE" nominal="1" />
+    <sample name="T2K_CC0pi_XSec_2DPcos_nu_I" input="NEUT:myinput.neutvect.prep.root" />
+
+  </nuisance>
+
+Parameter names should be looked up in the systematic frameworks themselves,
+NUISANCE just passes through the names to the relevant framework, GReWeight in 
+this case, and does no interpretation itself.
+
+This file can then be saved as comp.xml, for example, and a comparison run like:
+
+  $ nuiscomp -i comp.xml -o comp.root
+
+The nuissamples command can be used to search for available sample names, 
+like below:
+
+  $ nuissamples T2K_CC0pi
+  T2K_CC0pi_XSec_2DPcos_nu_I
+  T2K_CC0pi_XSec_2DPcos_nu_II
+  T2K_CC0pi_XSec_H2O_2DPcos_anu
+  T2K_CC0pinp_STV_XSec_1Ddpt_nu
+  T2K_CC0pinp_STV_XSec_1Ddphit_nu
+  T2K_CC0pinp_STV_XSec_1Ddat_nu
+  T2K_CC0piWithProtons_XSec_2018_multidif_0p
+  T2K_CC0piWithProtons_XSec_2018_multidif_1p
+  T2K_CC0pinp_ifk_XSec_3Dinfp_nu
+  T2K_CC0pinp_ifk_XSec_3Dinfa_nu
+  T2K_CC0pinp_ifk_XSec_3Dinfip_nu
+
+
+There is also a reduced command-line version, nuis comp, that for simple 
+comparisons is able to build the configuration files on the fly. 
+
+Run the below command for more information:
+
+  $ nuis comp help
+
+## Generation Support
+
+THESE SCRIPTS ARE SUPPLIED WITHOUT ANY WARRANTY AND ARE MAINTAINED ON A BEST
+EFFORT BASIS FOR INTERNAL NUISANCE VALIDATION USE. NEVER QUOTE A nuis gen LINE
+TO A GENERATOR DEVELOPER ASKING FOR HELP, WORK OUT WHAT nuis gen RAN AND QUOTE
+THAT.
+
+NUISANCE provides some command line tools for running the generators
+consistently for some subset of the available options for each generator.
+The main options homogenised are related to generating for specific experimental
+comparison set ups: neutrino species, flux distribution, and target material.
+
+  $ nuis gen NEUT help
+
+NEUT here can be replaced with GENIE or NuWro to see the options for those 
+helpers.
+
+An example might be:
+
+  $ nuis gen NEUT -n 100000 -E MicroBooNE -P numu -t Ar -o MicroBoone.neutvect.root
+
+These scripts generate and prepare the files as needed. They often leave 
+intermediate files in the current working directory that can be useful for 
+debugging any issues encountered.
+
+EOF
+markdown_py | lynx -stdin
+  ;;
+
+  nuisance3)
+cat << 'EOF'
+# NUISANCE3 
+
+NUISANCE3 is mainly steered via python. As a result, no executables are visible
+in the environment of this container when it starts so that they don't collide 
+with the NUISANCE2 version. To fully set up the NUISANCE3 environment, run:
+
+$ source /opt/nuisanc3/git_master/bin/setup.NUISANCE3.sh
+
+For most NUISANCE3 usage, start jupyter like:
+
+$ jupyter lab --allow-root --no-browser --ip 0.0.0.0 --LabApp.token=''
+
+Some example notebooks live in:
+
+/opt/nuisance3/notebooks
+
+EOF
+markdown_py | lynx -stdin
+  ;;
+
+  docker_run)
+cat << 'EOF'
+function docker_run {
+  #Get a sanitised version of the full container name
+  local CONT_NAME=$(echo ${1} | sed "s|.*/\(.*\):.*|\1|g" )
+  #Checks if you are currently in a subdir of your homedir
+  local STRIPPED
+  if [ $# -eq 1 ]; then
+    local LOC=$(pwd -P)/
+    case ${LOC} in
+      ${HOME}/*)
+      local STRIPPED=${LOC##${HOME}/}
+      ;;
+    esac
+  fi
+  # If you are, mount it in the container and start in it
+  if [ ! -z ${STRIPPED} ]; then
+    docker run --privileged -it --rm --volume ${HOME}:/root --mount type=volume,src=docker_scratch,dst=/scratch \
+      -e CONT_NAME=${CONT_NAME} -e PS1="\[\e[1m\e[31m\]${CONT_NAME}\[\e(B\e[m\]:\[\e[1m\e[32m\]\$(basename \$(pwd)) $\[\e(B\e[m\] " \
+      -w /root/${STRIPPED} "${@}"
+  else
+  # Otherwise, assume that you probably want your home directory mounted 
+    docker run --privileged -it --rm --volume ${HOME}:/root --mount type=volume,src=docker_scratch,dst=/scratch \
+          -e CONT_NAME=${CONT_NAME} -e PS1="\[\e[1m\e[31m\]${CONT_NAME}\[\e(B\e[m\]:\[\e[1m\e[32m\]\$(basename \$(pwd)) $\[\e(B\e[m\] " \
+          -w /root "$@"
+  fi
+}
+EOF
+markdown_py | lynx -stdin
+  ;;
+
+  *)
+cat << 'EOF'
+# Help
+
+## Installed Software
+
+All non-system software is installed to /opt.
+
+The majority of the software is available in the environment from the start.
+
+See, e.g.
+
+`$ which neutroot2`
+
+Check the full environment with:
+
+`$ printenv`
+
+Sub-help commands exist for software-specific help, try:
+
+```
+$ help neut
+$ help nuwro
+$ help genie
+$ help gibuu
+$ help achilles
+$ help nusystematics
+$ help t2kreweight
+$ help nuisance2
+$ help nuisance3
+$ help docker_run
+```
+EOF
+markdown_py | lynx -stdin
+  ;;
+
+esac

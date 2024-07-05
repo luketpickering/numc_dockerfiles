@@ -14,11 +14,14 @@ RUN dnf -y update \
                        mesa-libGLU-devel mesa-libGLw glew-devel motif-devel libpng-devel libjpeg-turbo-devel ftgl-devel \
                        libxml2-devel gmp-devel gsl-devel log4cpp-devel bzip2-devel pcre-devel xz-devel zlib-devel \
                        freetype-devel fftw-devel blas-devel lapack-devel lz4-devel z3-devel xz-devel libnsl2-devel \
-                       davix-devel \
+                       davix-devel libomp-devel \
+                       fmt-devel spdlog-devel eigen3-devel \
                        libzip-devel protobuf-devel protobuf-compiler \
+                       libarrow-devel libarrow-python-devel \
                        boost-devel boost-filesystem tbb-devel hdf5-devel sqlite-devel \
                        platform-python-devel python3-numpy \
-                       vim nano gdb csh tcsh ed quota patch procmail less tmux task-spooler procps
+                       vim nano gdb csh tcsh ed quota patch procmail less tmux task-spooler procps \
+                       libasan libubsan gperftools
 
 ENV LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:/usr/lib:/usr/lib64:/lib:/lib64
 
