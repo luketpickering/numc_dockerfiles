@@ -5,7 +5,10 @@ WORKDIR /opt/
 RUN git clone https://github.com/NUISANCEMC/nuisance3.git nuisance3-src
 RUN mkdir nuisance3-build
 WORKDIR /opt/nuisance3-build
-RUN cmake /opt/nuisance3-src -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/nuisance3/git_master \
+RUN cmake /opt/nuisance3-src \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=/opt/nuisance3/git_master \
+      -DNUISANCE_LEGACY_INTERFACE=ON \
     && make install -j 4
 
 #output container image
@@ -13,6 +16,8 @@ FROM picker24/genbox:alma9
 
 COPY --from=build /opt/nuisance3/ /opt/nuisance3/
 COPY --from=build /opt/nuisance3-src/data /opt/nuisance3/
+
+ADD notebooks /opt/nuisance3/
 
 ENV NUISANCE3_ROOT=/opt/nuisance3/git_master \
     NUISANCE3_VERSION=3.0.0 \
