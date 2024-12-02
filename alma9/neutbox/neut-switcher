@@ -1,0 +1,75 @@
+function remove_from_path {
+  export PATH=$(echo $PATH | tr ":" "\n" | grep -v "${1}" | tr "\n" ":")
+}
+
+function add_to_path {
+  export PATH="${1}:${PATH}"
+}
+
+function remove_from_ldlpath {
+  export LD_LIBRARY_PATH=$(echo $LD_LIBRARY_PATH | tr ":" "\n" | grep -v "${1}" | tr "\n" ":")
+}
+
+function add_to_ldlpath {
+  export LD_LIBRARY_PATH="${1}:${LD_LIBRARY_PATH}"
+}
+
+function remove_from_pkgcpath {
+  export PKG_CONFIG_PATH=$(echo $PKG_CONFIG_PATH | tr ":" "\n" | grep -v "${1}" | tr "\n" ":")
+}
+
+function add_to_pkgcpath {
+  export PKG_CONFIG_PATH="${1}:${PKG_CONFIG_PATH}"
+}
+
+function setup_NEUT {
+  VERS=${1}
+
+  if [ ! -e /opt/neut/${VERS} ]; then
+    echo "Cannot set up NEUT version: ${VERS}, as /opt/neut/${VERS} doesn't exist."
+    return 1
+  fi
+
+  echo "Setting up NEUT v${VERS} from /opt/neut/${VERS}"
+
+  if [ ! -z "${NEUT_VERSION}" ]; then
+    remove_from_path /opt/neut/${NEUT_VERSION}/bin
+    remove_from_ldlpath /opt/neut/${NEUT_VERSION}/lib
+    remove_from_pkgcpath /opt/neut/${NEUT_VERSION}
+  fi
+
+  export NEUT_VERSION=${VERS}
+
+  add_to_path /opt/neut/${NEUT_VERSION}/bin
+  add_to_ldlpath /opt/neut/${NEUT_VERSION}/lib
+
+  export NEUT_ROOT=/opt/neut/${NEUT_VERSION}
+  export NEUT_CRSPATH=${NEUT_ROOT}/share/neut/crsdat
+  export NEUT_CARDS=${NEUT_ROOT}/share/neut/Cards
+
+  add_to_pkgcpath ${NEUT_ROOT}
+
+}
+
+VERS=${1}
+
+if [ $# == 0 ]; then
+  echo "Available NEUT versions:"
+  for i in /opt/neut/*; do
+    NDIR=${i##/opt/neut/}
+    if [ "${NDIR}" == "src" ] || [ "${NDIR}" == "utils" ]; then
+      continue
+    fi
+    echo "  ${NDIR}" 
+  done
+else
+
+  if [ "$0" = "$BASH_SOURCE" ]; then
+    echo "You must source this script when trying to change the active NEUT version. Run like:"
+    echo "  source neut-switcher <version>"
+  else
+    setup_NEUT $VERS
+    echo "neutroot2 @ $(which neutroot2)"
+  fi
+
+fi
