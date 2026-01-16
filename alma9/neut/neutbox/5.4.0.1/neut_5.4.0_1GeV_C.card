@@ -1,0 +1,222 @@
+C--------------------------------------------------
+C
+C EVCT-NEVT
+C   Number of events to generate
+C
+
+EVCT-NEVT  1000
+
+C--------------------------------------------------
+C
+C EVCT-IDPT
+C   Neutrino flavor ( PDG code )
+C         12 : nue   ( -12 : anti-nue   )
+C         14 : numu  ( -14 : anti-numu  )
+C         16 : nutau ( -16 : anti-nutau )
+C
+
+EVCT-IDPT 14
+
+C--------------------------------------------------
+C
+C EVCT-MPOS
+C   Vertex position flag
+C          1 : Fixed  ( position is given by EVCT-POS )
+C          2 : Random ( radius is given by EVCT-RAD )
+C
+C EVCT-POS
+C   Vertex position ( in cm )
+C          X Y Z  
+C
+C EVCT-RAD
+C   maximum vertex position ( in radius ) in cm
+C          R
+C
+C EVCT-MPOS 1
+C EVCT-POS  100. 0. 0.
+C
+
+EVCT-MPOS 2
+EVCT-RAD  100.
+
+C--------------------------------------------------
+C
+C EVCT-MDIR 
+C   Neutrino direction flag
+C          1 : Fixed direction ( given by DIR )
+C          2 : Random direction
+C
+C EVCT-DIR
+C   Neutrino direction ( unit vector )
+C          X Y Z
+
+EVCT-MDIR 1
+EVCT-DIR 0. 0. 1.
+
+C--------------------------------------------------
+C
+C EVCT-MPV
+C   Energy of neutrino
+C          1 : Fixed  ( given by EVCT-PV )
+C          2 : Random ( range is given by EVCT-PV )
+C          3 : Flux file
+C
+C EVCT-PV
+C   Energy ( range ) of neutrino ( Fixed : Emin is used )
+C          Emin Emax
+C
+C EVCT-FILENM
+C   Flux filname
+C
+C EVCT-HISTNM
+C   Flux histogram name
+C
+C EVCT-INMEV
+C   Energy unit of the input flux histogram
+C          0 : In GeV
+C          1 : In MeV
+C
+
+EVCT-MPV  1
+EVCT-PV  1000.
+
+C--------------------------------------------------
+C **** TARGET INFORMATION ****
+C
+C NUMBNDN : total number of neutron
+C           (e.g. CH => 6, H2O => 8, Ar => 22, Fe => 30)
+C
+C NUMBNDP : total number of bound proton
+C           (e.g. CH => 6, H2O => 8, Ar => 18, Fe => 26)
+C
+C NUMFREP : total number of free proton
+C           (e.g. CH => 1, H2O => 2, Ar => 0, Fe => 0)
+C
+C NUMATOM : atomic number of atom heavier than hydrogen
+C           (e.g. CH => 12, H2O =>16, Ar => 40, Fe => 56)
+C
+
+NEUT-NUMBNDN 6
+NEUT-NUMBNDP 6
+NEUT-NUMFREP 0
+NEUT-NUMATOM 12
+
+C--------------------------------------------------
+C
+C MODE : Interaction mode
+C                     0 : normal ( default )
+C                    -1 : input cross section by CRSNEUT
+C                     n : sellect one mode ( n > 0 )   See nemodsel.F
+C                           n =  1 : charged current Q.E. 
+C                           n = 11,12,13
+C                                  : charged current Single pi production
+C                           n = 16 : coherent Single pi production
+C                           n = 21 : charged current Multi pi production
+C                           n = 31,32,33,34
+C                                  : neutral current Single pi production
+C                           n = 36 : coherent Single pi production
+C                           n = 41 : neutral current Multi pi production
+C                           n = 51,52 : neutral current elastic 
+C                           n = 22,42,43 : single eta production 
+C                           n = 23,44,45 : single  K  production 
+C
+NEUT-MODE   0
+C
+
+C-----------------------------------------------------------------------
+C
+C NEUT-CRS
+C   Multiplied factor to cross section on each mode. ( neu )
+C
+C NEUT-CSRB
+C   Multiplied factor to cross section on each mode. ( neu-bar )
+C
+C  nu                     nub
+C  1:     CC Q.E.         CC Q.E.( Free )
+C  2-4:   CC 1pi          CC 1pi
+C  5:     CC DIS 1320     CC DIS 1.3 < W < 2.0
+C  6-9:   NC 1pi          NC 1pi
+C  10:    NC DIS 1320     NC DIS 1.3 < W < 2.0
+C  11:    NC els          CC Q.E.( Bound )
+C  12:    NC els          NC els
+C  13:    NC els          NC els
+C  14:    coherent        NC els
+C  15:    coherent        coherent
+C  16:    CC eta          coherent
+C  17     NC eta          CC eta
+C  18:    NC eta          NC eta
+C  19:    CC K            NC eta
+C  20     NC K            CC K
+C  21:    NC K            NC K
+C  22:    N/A             NC K
+C  23:    CC DIS          CC DIS (W > 2.0)
+C  24:    NC DIS          NC DIS (W > 2.0)
+C  25:    CC 1 gamma      CC 1 gamma
+C  26,27: NC 1 gamma      NC 1 gamma
+C  28     CC 2p2h         CC 2p2h
+C  29     CC Difract.     CC Difract
+C  30     NC Difract.     NC Difract
+C
+C          1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
+CNEUT-CRS  1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1.
+CNEUT-CRSB 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1.
+
+C-----------------------------------------------------------------------
+C
+C NEUT-MDLQE
+C
+C   CC Quasi-elastic / NC elastic model selection
+C        ( Not all the combinations are supported )
+C
+C        Simple Fermi-Gas mdels
+C         xxx1 : Smith-Moniz with dipole 
+C         xxx2 : Smith-Moniz with BBBA05
+C         xxx3 : Smith-Moniz with BBBA07
+C
+C         xx0x : NCEL cross-section scaling to CCQE
+C         xx1x : NCEL cross-section scaling to Spectrum func. with Dipole
+C         xx2x : NCEL cross-section scaling to Spectrum func. with BBBA05
+C         xx3x : NCEL cross-section scaling to Spectrum func. with BBBA07
+C
+C        Transverse enhancement ( only for partial ) 
+C         x1xx : CCQE with Transverse enhancement ( Bodek et al. )
+C
+C        Spectral functions ( CC & NC )
+C         x4xx : Spectral function model ( Ankowski et al. )
+C         x6xx : TEM spectral function
+C         x7xx : Effective spectral function
+C
+C        RPA correcton on/off
+C         1xxx : RPA correction ( Nieves et al. )
+C                
+C        Nieves 1p1h model 
+C         2XxX : Nieves 1p1h ( X digits are ignored for now )
+C
+C NEUT-MAQE 
+C   CCQE Axial Mass 
+C      For Smith-Moniz, set 1.01, 1.05, 1.11, 1.21{default}, or 1.31
+C      For Nieves 1p1h, set 1.05 ( suggested value ) or 1.21.
+C      
+
+NEUT-MDLQE 2002
+NEUT-MAQE 1.05
+
+C
+C-----------------------------------------------------------------------
+C
+C NEUT-RAND
+C   method to initialize random
+C      0 : Read RANDOM number from FILE 
+C             ( specfy file with the enviroment variable RANFILE )
+C      1 : Generating RANDOM SEED from the time
+C
+
+NEUT-RAND 1
+
+C
+C-----------------------------------------------------------------------
+C
+C NEUT-CRSPATH
+C   Cross-section data file pathname
+
+NEUT-CRSPATH '/opt/neut/5.4.0.1/src/crsdat'

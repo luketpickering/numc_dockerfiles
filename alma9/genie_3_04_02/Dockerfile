@@ -12,8 +12,8 @@ RUN wget https://lhapdf.hepforge.org/downloads/LHAPDF-${LHAPDF_VERS}.tar.gz \
     && tar -zxvf LHAPDF-${LHAPDF_VERS}.tar.gz
 
 WORKDIR /opt/LHAPDF-src/LHAPDF-6.5.1/config/
-RUN  wget -O config.guess 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD' \
- && wget -O config.sub 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD'
+ADD config.guess config.sub /opt/LHAPDF-src/LHAPDF-6.5.1/config/
+RUN chmod +x config.guess config.sub
 
 RUN mkdir -p /opt/LHAPDF-build /opt/LHAPDF/${LHAPDF_VERS}
 WORKDIR /opt/LHAPDF-build
@@ -23,7 +23,7 @@ RUN /opt/LHAPDF-src/LHAPDF-${LHAPDF_VERS}/configure \
                                     --prefix=/opt/LHAPDF/${LHAPDF_VERS} \
     && make install -j 4
 
-FROM picker24/root_v6_30_04:alma9 AS genie_build
+FROM picker24/buildbox:alma9 AS genie_build
 WORKDIR /
 
 COPY --from=lhapdf_build /opt/LHAPDF/ /opt/LHAPDF/
@@ -34,12 +34,14 @@ ENV LD_LIBRARY_PATH=${LHAPATH}/lib:${LD_LIBRARY_PATH}
 ENV LHAPDF_INC=${LHAPATH}/include
 ENV LHAPDF_LIB=${LHAPATH}/lib
 
+ENV ROOTSYS=/usr
+
 ENV GENIE_VERSION=3_04_02
 ENV GENIE_REWEIGHT_VERSION=1_02_04
 
 WORKDIR /opt/
-RUN git clone --depth 1 --branch R-${GENIE_VERSION} https://github.com/GENIE-MC/Generator.git Generator-src
-RUN git clone --depth 1 https://github.com/GENIE-MC/Reweight.git Reweight-src
+RUN git clone --depth 1 --branch hotfix/root_search_dehardcode https://github.com/luketpickering/Generator.git Generator-src
+RUN git clone --depth 1 --branch R-${GENIE_REWEIGHT_VERSION} https://github.com/GENIE-MC/Reweight.git Reweight-src
 
 ENV GENIE=/opt/Generator-src
 
@@ -80,7 +82,7 @@ WORKDIR ${GENIE}/src
 RUN ln -s -t . ../include/GENIE/*/
 
 ## Final container
-FROM picker24/root_v6_30_04:alma9
+FROM picker24/buildbox:alma9
 
 COPY --from=lhapdf_build /opt/LHAPDF /opt/LHAPDF
 ENV LHAPDF_VERS=6.5.1 \
@@ -90,7 +92,7 @@ ENV LHAPDF_VERS=6.5.1 \
     LHAPDF_INC=/opt/LHAPDF/6.5.1/include \
     LHAPDF_LIB=/opt/LHAPDF/6.5.1/lib \
     GENIE_VERSION=3_04_02 \
-    GENIE_REWEIGHT_VERSION=1_02_04 \
+    GENIE_REWEIGHT_VERSION=1_04_00 \
     GENIE=/opt/genie/3_04_02 \
     GENIE_REWEIGHT=/opt/genie/3_04_02
 

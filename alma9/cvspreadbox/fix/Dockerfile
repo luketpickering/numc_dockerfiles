@@ -1,0 +1,3 @@
+from picker24/cvspreadbox:alma9
+
+ENV LD_LIBRARY_PATH=LD_LIBRARY_PATH=/opt/nuisance/nuisance2/build/Linux/lib:/opt/nuisance/nuisance3/lib:/opt/nusystematics/v02_00_05/lib:/opt/fhicl-cpp-standalone/lib:/opt/fhicl-cpp-standalone/libexec:/opt/NuHepMC_CPPUtils/git_master/lib:/opt/NuHepMC_CPPUtils/git_master/lib64:/opt/HepMC3/3.3.2/lib64:/opt/neut/5.8.0/lib:/opt/genie/3_04_02/lib:/opt/genie/3_04_02/lib:/opt/LHAPDF/6.5.1/lib:/opt/buildbox/lib64:/opt/buildbox/lib:/usr/lib64/root:/usr/local/lib:/usr/local/lib64:/usr/lib:/usr/lib64:/lib:/lib64
